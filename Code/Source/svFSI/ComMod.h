@@ -51,10 +51,13 @@
 
 #include "fils_struct.hpp"
 
+#include "cvOneDOptions.h"
+
 #include <array>
 #include <iostream>
 #include <string>
 #include <vector>
+#include <fstream>
 
 /// @brief Fourier coefficients that are used to specify unsteady BCs
 //
@@ -136,6 +139,22 @@ class rcrType
     double Xo = 0.0;
 };
 
+class cpl1DType
+{
+  public:
+    double flowEachTime = 0.0;
+    double preFrom1DEachTime = 0.0;
+
+    // processor id
+    int iPr = -1;
+    
+    // couple1D
+    cvOneDOptions opts;
+
+    std::string outputFileName;
+
+};
+
 /// @brief Boundary condition data type
 //
 class bcType
@@ -212,6 +231,10 @@ class bcType
 
     // Neu: RCR
     rcrType RCR;
+    
+    //couple with 1D
+    cpl1DType cpl1D;
+    
 };
 
 /// @brief Class storing data for B-Splines.

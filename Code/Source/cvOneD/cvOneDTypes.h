@@ -1,4 +1,5 @@
-/* Copyright (c) Stanford University, The Regents of the University of California, and others.
+/* Copyright (c) Stanford University, The Regents of the University of
+ *               California, and others.
  *
  * All Rights Reserved.
  *
@@ -28,26 +29,39 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <map>
-#include <tuple>
+#ifndef CVONEDTYPES_H
+#define CVONEDTYPES_H
 
-/// @brief The 'equation_dof_map' map defined here sets equation dof and sym data members. 
-//
-using EquationDofType = std::tuple<int, std::string>; 
+# include <vector>
+# include <string>
 
-std::map<consts::EquationType, EquationDofType> equation_dof_map =
-{
-  {EquationType::phys_fluid,    std::make_tuple(nsd+1, "NS") },  //自由度数量,简称
-  {EquationType::phys_heatF,    std::make_tuple(1,     "HF") },
-  {EquationType::phys_heatS,    std::make_tuple(1,     "HS") },
-  {EquationType::phys_lElas,    std::make_tuple(nsd,   "LE") },
-  {EquationType::phys_struct,   std::make_tuple(nsd,   "ST") },
-  {EquationType::phys_ustruct,  std::make_tuple(nsd+1, "ST") },
-  {EquationType::phys_CMM,      std::make_tuple(nsd+1, "CM") },
-  {EquationType::phys_shell,    std::make_tuple(nsd,   "SH") },
-  {EquationType::phys_FSI,      std::make_tuple(nsd+1, "FS") },
-  {EquationType::phys_mesh,     std::make_tuple(nsd,   "MS") },
-  {EquationType::phys_CEP,      std::make_tuple(1,     "EP") },
-  {EquationType::phys_stokes,   std::make_tuple(nsd+1, "SS") }
+using namespace std;
+
+// CONSTANTS
+const int CV_STRLEN = 256;
+
+// RETURN VALUES
+const int CV_ERROR = -1;
+const int CV_OK = 0;
+
+// TYPES
+
+// STRUCTS
+struct cvOneDKentry{
+  int row;
+  int col;
+  double value;
 };
+
+// Vectors
+typedef vector<string> cvStringVec;
+typedef vector<long>   cvLongVec;
+typedef vector<double> cvDoubleVec;
+
+// Matrices
+typedef vector<vector<string> > cvStringMat;
+typedef vector<vector<long> >   cvLongMat;
+typedef vector<vector<double> > cvDoubleMat;
+
+#endif // CVONEDTYPES_H
 

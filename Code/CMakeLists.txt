@@ -122,6 +122,52 @@ if(GLOBAL_DEFINES)
   list(REMOVE_DUPLICATES GLOBAL_DEFINES)
 endif()
 add_definitions(${GLOBAL_DEFINES})
+
+SET(sparseSolverType "skyline" CACHE STRING "Use Sparse Solver")
+SET_PROPERTY(CACHE sparseSolverType PROPERTY STRINGS skyline superlu csparse)
+
+# ADD DEFINITION SO THE C++ CODE CAN SEE IT
+IF(sparseSolverType STREQUAL "skyline")
+  ADD_DEFINITIONS("-DUSE_SKYLINE")
+ENDIF()
+IF(sparseSolverType STREQUAL "superlu")  
+  ADD_DEFINITIONS("-DUSE_SUPERLU")
+ENDIF()
+IF(sparseSolverType STREQUAL "csparse")
+  ADD_DEFINITIONS("-DUSE_CSPARSE")
+ENDIF()
+
+# ASK THE USER TO ENTER THE SUPERLU FOLDER
+IF(sparseSolverType STREQUAL "superlu")
+  SET(SUPERLU_DIR " " CACHE PATH "Enter SuperLU library folder")
+ENDIF()
+
+# INCLUDE SOURCE AND HEADER FILES
+IF(sparseSolverType STREQUAL "skyline")
+	FILE(GLOB SRC_C "${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/*.c"
+        	        "${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/*.cxx")
+	FILE(GLOB SRC_H "${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/*.h")
+
+ELSEIF(sparseSolverType STREQUAL "superlu")
+	FILE(GLOB SRC_C "${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/*.c"
+	                "${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/*.cxx"
+     		        "${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/sparse/*.cxx"
+	                "${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/sparse/superlu/*.c"
+	                "${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/sparse/superlu/*.cxx")
+	FILE(GLOB SRC_H "${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/*.h"
+        	        "${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/sparse/*.h"
+                	"${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/sparse/superlu/*.h")
+
+ELSEIF(sparseSolverType STREQUAL "csparse")
+	FILE(GLOB SRC_C "${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/*.c"
+        	        "${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/*.cxx"
+			"${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/sparse/*.cxx"
+			"${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/sparse/csparse/*.c"
+			"${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/sparse/csparse/*.cxx")
+	FILE(GLOB SRC_H "${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/*.h"
+		        "${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/sparse/*.h"
+			"${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/sparse/csparse/*.h")
+ENDIF()
 #-----------------------------------------------------------------------------
 
 #-----------------------------------------------------------------------------

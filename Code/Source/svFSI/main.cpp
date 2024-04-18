@@ -53,6 +53,7 @@
 #include "txt.h"
 #include "ustruct.h"
 #include "vtk_xml.h"
+// #include "cvOneD.h"
 
 #include <stdlib.h>
 #include <iomanip>
@@ -85,7 +86,92 @@ void read_files(Simulation* simulation, const std::string& file_name)
   
 }
 
+void Couple1D(ComMod& com_mod)
+{
+  using namespace consts;
+  int mpi_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
+  #define debug_Couple1D
+  #ifdef debug_Couple1D
+  DebugMsg dmsg(__func__, com_mod.cm.idcm());
+  #endif
+
+  for (int iEq = 0; iEq < com_mod.nEq; iEq++) {
+    auto& eq = com_mod.eq[iEq];
+    if (eq.phys == EquationType::phys_fluid || eq.phys == EquationType::phys_FSI) {
+      for (int iBc = 0; iBc < eq.nBc; iBc++) {
+        auto& bc = eq.bc[iBc];
+        int iFa = bc.iFa;
+        int iM = bc.iM;
+        auto& Fa = com_mod.msh[iM].fa[iFa];
+        // 每个处理器都要计算,怎么优化?
+        if(utils::btest(bc.bType, enum_int(BoundaryConditionType::bType_cpl1D))){
+          double flow = 0.0;
+          for (int a = 0; a < Fa.nNo; a++){
+            dmsg << ">>> Fa.nNo: " << Fa.nNo;
+            for (int i = 0; i < com_mod.nsd; i++){
+              int Ac = Fa.gN(a);  //返回全局编号
+              int s = eq.s; 
+              flow += com_mod.Yn(s + i,Ac) * Fa.nV(i,a); //第a个节点第i个分量
+            }
+          }
+          // 防止别的处理器将flowEachTime修改为0
+          // bc.cpl1D.iPr默认为-1, wall条件的时候没有flow, bc.cpl1D.iPr最后还是-1
+          if (flow != 0.0){
+            bc.cpl1D.iPr = mpi_rank;
+            bc.cpl1D.flowEachTime = flow;
+          }
+
+          #ifdef debug_Couple1D
+          if (mpi_rank == bc.cpl1D.iPr) {
+            dmsg.banner();
+            dmsg << ">>> iBc: " << iBc; 
+            dmsg << ">>> name: " << Fa.name;
+            dmsg << ">>> iPr: " << bc.cpl1D.iPr;
+            dmsg << ">>> flowEachTime: " << bc.cpl1D.flowEachTime;
+          }
+          #endif
+
+          // 开始svOneDsolver迭代,输出压强pressure1D
+          // cvOneD::test(Fa.name);
+
+          bc.cpl1D.preFrom1DEachTime = 50000;  //test
+
+          #ifdef Couple1D
+          dmsg << ">>> preFrom1DEachTime: " << bc.preFrom1DEachTime << std::endl;
+          #endif
+
+          // 法向量(0,0,1)，每个点的法向量其实有细微出入, 取平均值带入
+          Vector<double> nv_age(com_mod.nsd);
+          for (int i = 0; i < com_mod.nsd; i++){
+            for (int j = 0; j < Fa.nNo; j++){
+              nv_age(i) += Fa.nV(i,j);
+            }
+            nv_age(i) = nv_age(i) / Fa.nNo;
+          }
+
+          double pre = bc.cpl1D.preFrom1DEachTime;
+          for (int i = 0; i < com_mod.nsd; i++){
+            bc.h(i) =  pre * nv_age(i);
+          }
+
+          #ifdef debug_Couple1D
+          // dmsg << ">>> nV0: " << Fa.nV.col(0);
+          // dmsg << ">>> nV5: " << Fa.nV.col(5);
+          // dmsg << ">>> nV6: " << Fa.nV.col(6);
+          // dmsg << ">>> nV7: " << Fa.nV.col(7);
+          // dmsg << ">>> nV11: " << Fa.nV.col(11);
+          dmsg << ">>> nV_age: " << nv_age;
+          dmsg << ">>> h: " << bc.h;
+          #endif
+        }else{
+          break;
+        }
+      }
+    }
+  }
+}
 
 /// @brief Iterate the precomputed state-variables in time using linear interpolation to the current time step size
 //
@@ -121,9 +207,9 @@ void iterate_precomputed_time(Simulation* simulation) {
   double& dt = com_mod.dt;
 
   if (com_mod.usePrecomp) {
-#ifdef debug_iterate_solution
-        dmsg << "Use precomputed values ..." << std::endl;
-#endif
+  #ifdef debug_iterate_solution
+          dmsg << "Use precomputed values ..." << std::endl;
+  #endif
     // This loop is used to interpolate between known time values of the precomputed
     // state-variable solution
     for (int l = 0; l < com_mod.nMsh; l++) {
@@ -573,7 +659,7 @@ void iterate_solution(Simulation* simulation)
 
       pic::picc(simulation);
       com_mod.Yn.write("Yn_picc"+ istr);
-
+      
       // Writing out the time passed, residual, and etc.
       if (std::count_if(com_mod.eq.begin(),com_mod.eq.end(),[](eqType& eq){return eq.ok;}) == com_mod.eq.size()) { 
         #ifdef debug_iterate_solution
@@ -583,14 +669,18 @@ void iterate_solution(Simulation* simulation)
         break;
       } 
 
-      output::output_result(simulation, com_mod.timeP, 2, iEqOld);
+      output::output_result(simulation, com_mod.timeP, 2, iEqOld); //输出每一步的详细信息那些
 
       inner_count += 1;
     } // Inner loop
 
     #ifdef debug_iterate_solution
-    dmsg << ">>> End of inner loop " << std::endl; 
+    dmsg << "---------- End of inner loop----------------" << std::endl; 
     #endif
+
+    // Xia,每个进程都会执行,更改
+    // MPI_Barrier(MPI_COMM_WORLD);  // 等待所有进程都完成工作
+    Couple1D(com_mod);
 
     // IB treatment: interpolate flow data on IB mesh from background
     // fluid mesh for explicit coupling, update old solution for implicit
@@ -734,8 +824,12 @@ void iterate_solution(Simulation* simulation)
   } // End of outer loop
 
   #ifdef debug_iterate_solution
-  dmsg << "End of outer loop" << std::endl;
+  dmsg << "---------- End of outer loop ----------" << std::endl;
   #endif
+
+  
+  // cout << "Completed!" << endl;
+  // outFile.close();
 
   //#ifdef debug_iterate_solution
   //dmsg << "=======  Simulation Finished   ========== " << std::endl;

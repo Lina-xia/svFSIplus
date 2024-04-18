@@ -127,7 +127,8 @@ enum class BoundaryConditionType
   bType_free = 19,     // shell free
   bType_symm = 20,     // shell symmetric 
   bType_undefNeu = 21, // undeforming Neu
-  bType_RCR = 22       // RCR-Neu
+  bType_RCR = 22,      // RCR-Neu
+  bType_cpl1D = 23,    // couple with svOneDSolver
 };
 
 // Define constants using smaller name and integer value (needed for bitwise operations).
@@ -182,6 +183,9 @@ constexpr auto iBC_symm = static_cast<int>(BoundaryConditionType::bType_symm);
 
 constexpr auto BC_trac = BoundaryConditionType::bType_trac;
 constexpr auto iBC_trac = static_cast<int>(BoundaryConditionType::bType_trac);
+
+constexpr auto BC_cpl1D = BoundaryConditionType::bType_cpl1D;
+constexpr auto iBC_cpl1D = static_cast<int>(BoundaryConditionType::bType_cpl1D);
 
 constexpr auto BC_undefNeu = BoundaryConditionType::bType_undefNeu;
 constexpr auto iBC_undefNeu = static_cast<int>(BoundaryConditionType::bType_undefNeu);
@@ -254,12 +258,12 @@ enum class ElementType
 {
   NA = 100, 
   PNT = 101,
-  LIN1 = 102, 
+  LIN1 = 102, //一维
   LIN2 = 103, 
-  TRI3 = 104,
+  TRI3 = 104,//二维三角
   TRI6 = 105, 
   QUD4 = 106, 
-  QUD8 = 107,
+  QUD8 = 107, //立方体
   QUD9 = 108, 
   TET4 = 109, 
   TET10 = 110,

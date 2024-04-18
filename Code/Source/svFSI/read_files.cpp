@@ -45,11 +45,14 @@
 #include "fsils_api.hpp"
 #include "fils_struct.hpp"
 
+#include "cvOneD.h"
+
 #include <fstream>
 #include <functional>
 #include <math.h>
 #include <sstream>
 #include <vector>
+#include <fstream>
 
 namespace read_files_ns {
 
@@ -203,7 +206,40 @@ void read_bc(Simulation* simulation, EquationParameters* eq_params, eqType& lEq,
     lBc.bType = utils::ibset(lBc.bType, enum_int(BoundaryConditionType::bType_Neu)); 
 
   } else if (std::set<std::string>{"Coupled Momentum","CMM"}.count(bc_type)) {
-    lBc.bType = utils::ibset(lBc.bType, enum_int(BoundaryConditionType::bType_CMM)); 
+    lBc.bType = utils::ibset(lBc.bType, enum_int(BoundaryConditionType::bType_CMM));
+  
+  } else if (std::set<std::string>{"Couple1D","Cpl1D"}.count(bc_type)){
+    lBc.bType = utils::ibset(lBc.bType, enum_int(BoundaryConditionType::bType_cpl1D));
+    lBc.bType = utils::ibset(lBc.bType, enum_int(BoundaryConditionType::bType_trac));
+    lBc.bType = utils::ibset(lBc.bType, enum_int(BoundaryConditionType::bType_std));
+
+    //寻找name.in读取,并创建name.out
+    std::string FileName = simulation->com_mod.msh[lBc.iM].fa[lBc.iFa].name;
+    std::string inputName = FileName + ".in";
+    std::string outputName = FileName + ".out";
+
+    lBc.cpl1D.outputFileName = outputName;
+    // 这里还需要规定仅一个核执行,
+    // 多个耦合边界的时候,不同的核执行不同的以为运算并输出,可能会导致输出混乱,输出的重定向只输出到最后一个打开的文件
+    // 输出流只有一个核会做??
+    std::ofstream outputFile(outputName);
+    outputFile.open(outputName, std::ios::out);
+    // 写入程序头部
+    outputFile << "---------------------------------" << std::endl;
+    outputFile << " oneDSolver" << std::endl;
+    outputFile << " 1D Finite Element Hemodynamics" << std::endl;
+    outputFile << "---------------------------------" << std::endl;
+    
+    // // Read Model From File
+    // cvOneD::readModel(simulation->com_mod, inputName, lBc.cpl1D);
+
+    // // Model Checking
+    // lBc.cpl1D.opts.check();
+
+    // // Create Model
+    // cvOneD::createModel(lBc.cpl1D)
+
+    // outputFile.close();
 
   } else {
     throw std::runtime_error("[read_bc] Unknown boundary condition type '" + bc_type + "'.");

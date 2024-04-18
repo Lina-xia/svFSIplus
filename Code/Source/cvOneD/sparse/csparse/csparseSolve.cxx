@@ -1,4 +1,5 @@
-/* Copyright (c) Stanford University, The Regents of the University of California, and others.
+/* Copyright (c) Stanford University, The Regents of the University of
+ *               California, and others.
  *
  * All Rights Reserved.
  *
@@ -28,26 +29,59 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <map>
-#include <tuple>
+#include "csparseSolve.h"
+#include "../../cvOneDException.h"
 
-/// @brief The 'equation_dof_map' map defined here sets equation dof and sym data members. 
-//
-using EquationDofType = std::tuple<int, std::string>; 
+extern "C" {
+  #include "csparse.h"
+}
 
-std::map<consts::EquationType, EquationDofType> equation_dof_map =
-{
-  {EquationType::phys_fluid,    std::make_tuple(nsd+1, "NS") },  //自由度数量,简称
-  {EquationType::phys_heatF,    std::make_tuple(1,     "HF") },
-  {EquationType::phys_heatS,    std::make_tuple(1,     "HS") },
-  {EquationType::phys_lElas,    std::make_tuple(nsd,   "LE") },
-  {EquationType::phys_struct,   std::make_tuple(nsd,   "ST") },
-  {EquationType::phys_ustruct,  std::make_tuple(nsd+1, "ST") },
-  {EquationType::phys_CMM,      std::make_tuple(nsd+1, "CM") },
-  {EquationType::phys_shell,    std::make_tuple(nsd,   "SH") },
-  {EquationType::phys_FSI,      std::make_tuple(nsd+1, "FS") },
-  {EquationType::phys_mesh,     std::make_tuple(nsd,   "MS") },
-  {EquationType::phys_CEP,      std::make_tuple(1,     "EP") },
-  {EquationType::phys_stokes,   std::make_tuple(nsd+1, "SS") }
-};
+int csparseSolve(cvOneDKentry* Kentries,double *b,int numEntries, int NNZ,int nunknown,double u[]){
+
+  // Set Tolerance
+  double tol = 1.0e-12;
+  // Set Sparse Ordering AMD
+  int sparseOrdering = 1;
+  // Init Matrix
+  // Aux Triplet Matrix
+  cs* T = new cs();
+  // Sparse Matrix
+  cs* A; 
+
+  // Assign Matrix Entries in Triplet Format
+  T->nzmax = numEntries;
+  T->nz = NNZ;
+  T->m = nunknown;
+  T->n = nunknown;
+  T->p = new int[NNZ];    // Column Indices
+  T->i = new int[NNZ];    // Row Indices
+  T->x = new double[NNZ]; // Numerical Values
+  int j=0;
+  for(int i=0;i<numEntries;i++){
+    if(Kentries[i].col!=-1){
+      T->i[j] = Kentries[i].row;
+      T->p[j] = Kentries[i].col;
+      T->x[j] = Kentries[i].value;
+      j++;
+    }
+  }
+  
+  // Convert Matrix in Compressed Solumn Format
+  A = cs_triplet(T);
+
+  // Solve system
+  int ok = cs_lusol(A,b,sparseOrdering,tol);
+  if (ok == 0){
+    std::string errorMsg("Error: Cannot Solve Linear System\n");
+    throw cvException(errorMsg.c_str());
+  }
+
+  // Copy Solution Back
+  for(int loopA=0;loopA<nunknown;loopA++){
+    u[loopA] = b[loopA];
+  }
+
+  // Return Result
+  return ok;
+}
 

@@ -40,6 +40,8 @@ endif()
 
 set(FLOWSOLVER_SUBDIRS ${FLOWSOLVER_SUBDIRS} svFSILS)
 set(FLOWSOLVER_SUBDIRS ${FLOWSOLVER_SUBDIRS} svFSI)
+set(FLOWSOLVER_SUBDIRS ${FLOWSOLVER_SUBDIRS} cvOneD)
+
 
 #-----------------------------------------------------------------------------
 # Optional header path

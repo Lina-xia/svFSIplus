@@ -1,4 +1,5 @@
-/* Copyright (c) Stanford University, The Regents of the University of California, and others.
+/* Copyright (c) Stanford University, The Regents of the University of
+ *               California, and others.
  *
  * All Rights Reserved.
  *
@@ -28,26 +29,41 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <map>
-#include <tuple>
+#ifndef CVONEDMTHBRANCHMODEL_H
+#define CVONEDMTHBRANCHMODEL_H
 
-/// @brief The 'equation_dof_map' map defined here sets equation dof and sym data members. 
 //
-using EquationDofType = std::tuple<int, std::string>; 
+//  cvOneDMthBranchModel.h
+//  ~~~~~~~~~~~~~~~~~~
+//
+//  Mathematical formulations of joints. Lagrange multipliers are used to have
+//  pressure continuity and mass conservation (flux conservation) at joints.
+//
 
-std::map<consts::EquationType, EquationDofType> equation_dof_map =
-{
-  {EquationType::phys_fluid,    std::make_tuple(nsd+1, "NS") },  //自由度数量,简称
-  {EquationType::phys_heatF,    std::make_tuple(1,     "HF") },
-  {EquationType::phys_heatS,    std::make_tuple(1,     "HS") },
-  {EquationType::phys_lElas,    std::make_tuple(nsd,   "LE") },
-  {EquationType::phys_struct,   std::make_tuple(nsd,   "ST") },
-  {EquationType::phys_ustruct,  std::make_tuple(nsd+1, "ST") },
-  {EquationType::phys_CMM,      std::make_tuple(nsd+1, "CM") },
-  {EquationType::phys_shell,    std::make_tuple(nsd,   "SH") },
-  {EquationType::phys_FSI,      std::make_tuple(nsd+1, "FS") },
-  {EquationType::phys_mesh,     std::make_tuple(nsd,   "MS") },
-  {EquationType::phys_CEP,      std::make_tuple(1,     "EP") },
-  {EquationType::phys_stokes,   std::make_tuple(nsd+1, "SS") }
+
+# include "cvOneDMthModelBase.h"
+# include "cvOneDFEAVector.h"
+# include "cvOneDFEAMatrix.h"
+
+class cvOneDMthBranchModel: public cvOneDMthModelBase{
+
+  public:
+
+    cvOneDMthBranchModel(const vector<cvOneDSubdomain*> &subdList,
+                         const vector<cvOneDFEAJoint*> &jtList, const vector<int>& outletList);
+    ~cvOneDMthBranchModel(){}
+    int GetNumberOfJoints() {return numOfJoints;}
+    void FormNewton(cvOneDFEAMatrix* lhsMatrix, cvOneDFEAVector* rhsVector);
+    void GetEquationNumbers(long ele, long* eqNumbers, long ithJoint);
+    long GetUpmostEqnNumber(long ele, long ithJoint);
+
+  private:
+
+    void FormLagrangeRHSbyP(long ithJoint, cvOneDFEAVector* rhsVector);
+    void FormLagrangeRHSbyQ(long ithJoint, cvOneDFEAVector* rhsVector);
+    void FormLagrangeLHSbyP(long ithJoint, cvOneDFEAMatrix* lhs);
+    void FormLagrangeLHSbyQ(long ithJoint, cvOneDFEAMatrix* lhs);
+    int numOfJoints;
 };
 
+#endif // CVONEDMTHBRANCHMODEL_H

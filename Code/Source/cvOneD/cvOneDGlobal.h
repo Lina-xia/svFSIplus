@@ -1,4 +1,5 @@
-/* Copyright (c) Stanford University, The Regents of the University of California, and others.
+/* Copyright (c) Stanford University, The Regents of the University of
+ *               California, and others.
  *
  * All Rights Reserved.
  *
@@ -28,26 +29,56 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <map>
-#include <tuple>
+#ifndef CVONEDGLOBAL_H
+#define CVONEDGLOBAL_H
 
-/// @brief The 'equation_dof_map' map defined here sets equation dof and sym data members. 
-//
-using EquationDofType = std::tuple<int, std::string>; 
+# include <vector>
 
-std::map<consts::EquationType, EquationDofType> equation_dof_map =
-{
-  {EquationType::phys_fluid,    std::make_tuple(nsd+1, "NS") },  //自由度数量,简称
-  {EquationType::phys_heatF,    std::make_tuple(1,     "HF") },
-  {EquationType::phys_heatS,    std::make_tuple(1,     "HS") },
-  {EquationType::phys_lElas,    std::make_tuple(nsd,   "LE") },
-  {EquationType::phys_struct,   std::make_tuple(nsd,   "ST") },
-  {EquationType::phys_ustruct,  std::make_tuple(nsd+1, "ST") },
-  {EquationType::phys_CMM,      std::make_tuple(nsd+1, "CM") },
-  {EquationType::phys_shell,    std::make_tuple(nsd,   "SH") },
-  {EquationType::phys_FSI,      std::make_tuple(nsd+1, "FS") },
-  {EquationType::phys_mesh,     std::make_tuple(nsd,   "MS") },
-  {EquationType::phys_CEP,      std::make_tuple(1,     "EP") },
-  {EquationType::phys_stokes,   std::make_tuple(nsd+1, "SS") }
+# include "cvOneDModel.h"
+# include "cvOneDMaterialManager.h"
+# include "cvOneDMthSegmentModel.h"
+# include "cvOneDDataTable.h"
+# include "cvOneDLinearSolver.h"
+# include "cvOneDBFSolver.h"
+
+using namespace std;
+
+class cvOneDGlobal{
+  
+  public:
+
+    // GLOBAL FLAGS
+    static bool isCreating;
+    static bool isSolving;
+    static int outputType;
+    static int vtkOutputType;
+    static int CONSERVATION_FORM;
+
+    // DEBUG MODE
+    static bool debugMode;
+
+    // CURRENT MODEL INDEX
+    static long currentModel;
+
+    // VECTOR OF CREATED MODELS
+    static vector<cvOneDModel*> gModelList;
+
+    // GLOBAL MATERIAL MANAGER OBJECT
+    static cvOneDMaterialManager* gMaterialManager;
+
+    // GLOBAL Mth SEGMENT MODEL
+    static cvOneDMthSegmentModel* gMthSegmentModel;
+
+    // GLOBAL SOLVER INSTANCE
+    static cvOneDBFSolver* gBFSolver;
+
+    // GLOBAL VECTOR OF DATATABLES
+    static vector<cvOneDDataTable*> gDataTables;
+
+    // Generic Solver instance
+    static cvOneDLinearSolver *solver;
+
 };
+
+#endif // CVONEDGLOBAL_H
 
