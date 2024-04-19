@@ -37,7 +37,7 @@ using EquationDofType = std::tuple<int, std::string>;
 
 std::map<consts::EquationType, EquationDofType> equation_dof_map =
 {
-  {EquationType::phys_fluid,    std::make_tuple(nsd+1, "NS") },  //自由度数量,简称
+  {EquationType::phys_fluid,    std::make_tuple(nsd+1, "NS") },
   {EquationType::phys_heatF,    std::make_tuple(1,     "HF") },
   {EquationType::phys_heatS,    std::make_tuple(1,     "HS") },
   {EquationType::phys_lElas,    std::make_tuple(nsd,   "LE") },
