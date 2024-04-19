@@ -6,6 +6,31 @@ include_directories(${SV_SOURCE_DIR}/ThirdParty/tetgen/simvascular_tetgen)
 include_directories(${SV_SOURCE_DIR}/ThirdParty/tinyxml/simvascular_tinyxml)
 include_directories(${MPI_C_INCLUDE_PATH})
 
+# INCLUDE SOURCE AND HEADER FILES
+IF(sparseSolverType STREQUAL "skyline")
+	
+
+ELSEIF(sparseSolverType STREQUAL "superlu")
+	FILE(GLOB SRC_C "${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/*.c"
+	                "${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/*.cxx"
+     		        "${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/sparse/*.cxx"
+	                "${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/sparse/superlu/*.c"
+	                "${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/sparse/superlu/*.cxx")
+	FILE(GLOB SRC_H "${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/*.h"
+        	        "${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/sparse/*.h"
+                	"${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/sparse/superlu/*.h")
+
+ELSEIF(sparseSolverType STREQUAL "csparse")
+	FILE(GLOB SRC_C "${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/*.c"
+        	        "${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/*.cxx"
+			"${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/sparse/*.cxx"
+			"${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/sparse/csparse/*.c"
+			"${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/sparse/csparse/*.cxx")
+	FILE(GLOB SRC_H "${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/*.h"
+		        "${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/sparse/*.h"
+			"${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/sparse/csparse/*.h")
+ENDIF()
+
 # COMPILE CODE IN SPARSE SUBDIRECTORY
 IF(sparseSolverType STREQUAL "skyline")
   FILE(GLOB SRC_C "${CMAKE_CURRENT_SOURCE_DIR}/Source/cvOneD/*.c"
