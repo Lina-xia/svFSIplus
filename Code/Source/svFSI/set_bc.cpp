@@ -805,6 +805,7 @@ void set_bc_dir(ComMod& com_mod, Array<double>& lA, Array<double>& lY, Array<dou
     #ifdef set_bc_dir
     dmsg << ">>>> iEq: " << iEq;
     dmsg << "eq.nBc: " << eq.nBc;
+    dmsg << "eq.dof: " << eq.dof;
     #endif
 
     for (int iBc = 0; iBc < eq.nBc; iBc++) {
@@ -842,7 +843,7 @@ void set_bc_dir(ComMod& com_mod, Array<double>& lA, Array<double>& lY, Array<dou
       }
       int s = eq.s;
       int e = eq.e;
-      if (eq.dof == nsd+1) {
+      if (eq.dof == nsd+1) {  //如果方程未知量 = 空间维度+1
         e = e - 1;
       }
       #ifdef set_bc_dir
@@ -1025,21 +1026,23 @@ void set_bc_dir_l(ComMod& com_mod, const bcType& lBc, const faceType& lFa, Array
   
   } else if (utils::btest(lBc.bType, enum_int(BoundaryConditionType::bType_ustd))) {
     #ifdef debug_set_bc_dir_l
-    dmsg << "bType_ustd";
+    dmsg << "bType_ustd" << std::endl;
     #endif
     Vector<double> dirY_v(1), dirA_v(1);
     ifft(com_mod, lBc.gt, dirY_v, dirA_v);
     dirY = dirY_v(0);
     dirA = dirA_v(0);
 
-  } else { 
+  } else {
+  #ifdef debug_set_bc_dir_l
+    dmsg << "bType_std" << std::endl;
+    #endif
     dirA = 0.0;
     dirY = lBc.g;
   }
 
   if (lDof == nsd) {
     for (int a = 0; a < lFa.nNo; a++) {
-
       for (int i = 0; i < lA.nrows(); i++) {
         double nV = lFa.nV(i,a);
         lA(i,a) = dirA * lBc.gx(a) * nV;
@@ -1346,7 +1349,7 @@ void set_bc_neu(ComMod& com_mod, const CmMod& cm_mod, const Array<double>& Yg, c
       #endif
       set_bc_neu_l(com_mod, cm_mod, bc, com_mod.msh[iM].fa[iFa], Yg, Dg);
 
-    } else if (utils::btest(bc.bType,iBC_trac)) { 
+    } else if (utils::btest(bc.bType,iBC_trac) || utils::btest(bc.bType,iBC_cpl1D)) { 
       set_bc_trac_l(com_mod, cm_mod, bc, com_mod.msh[iM].fa[iFa]); 
     } 
   }
@@ -1721,7 +1724,7 @@ void set_bc_trac_l(ComMod& com_mod, const CmMod& cm_mod, const bcType& lBc, cons
   } else if (utils::btest(lBc.bType,iBC_std)) {
     for (int a = 0; a < nNo; a++) {
       int Ac = lFa.gN(a);
-      hg.set_col(Ac, lBc.h);
+      hg.set_col(Ac, lBc.h);   //这个函数有什么作用
     }
 
   } else if (utils::btest(lBc.bType,iBC_ustd)) {
@@ -1779,9 +1782,13 @@ void set_bc_trac_l(ComMod& com_mod, const CmMod& cm_mod, const bcType& lBc, cons
 
       for (int a = 0; a < eNoN; a++) {
         for (int i = 0; i < nsd; i++) {
-          lR(i,a) = lR(i,a) - w*N(a)*h(i);
+          lR(i,a) = lR(i,a) - w*N(a)*h(i);    //重点在这里
         }
       }
+    
+      #ifdef debug_set_bc_trac_l
+      dmsg << "h: " << h;
+      #endif
     }
 
     if (eq.assmTLS) {

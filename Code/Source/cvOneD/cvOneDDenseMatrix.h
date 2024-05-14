@@ -1,4 +1,5 @@
-/* Copyright (c) Stanford University, The Regents of the University of California, and others.
+/* Copyright (c) Stanford University, The Regents of the University of
+ *               California, and others.
  *
  * All Rights Reserved.
  *
@@ -28,26 +29,50 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <map>
-#include <tuple>
+#ifndef CVONEDDENSEMATRIXX_H
+#define CVONEDDENSEMATRIXX_H
 
-/// @brief The 'equation_dof_map' map defined here sets equation dof and sym data members. 
 //
-using EquationDofType = std::tuple<int, std::string>; 
+//  cvOneDDenseMatrix.h - Header for a class to handle dense matrices
+//  ~~~~~~~~~~~~~~~
+//  
+//  SYNOPSIS...This class creates an n x n dense matrix
+//             for use in finite element calculations.
+//             Typically, this will be used to store local
+//             (element) matrices before they are assembled
+//             into the global Jacobian.
 
-std::map<consts::EquationType, EquationDofType> equation_dof_map =
-{
-  {EquationType::phys_fluid,    std::make_tuple(nsd+1, "NS") },  //自由度数量,简称
-  {EquationType::phys_heatF,    std::make_tuple(1,     "HF") },
-  {EquationType::phys_heatS,    std::make_tuple(1,     "HS") },
-  {EquationType::phys_lElas,    std::make_tuple(nsd,   "LE") },
-  {EquationType::phys_struct,   std::make_tuple(nsd,   "ST") },
-  {EquationType::phys_ustruct,  std::make_tuple(nsd+1, "ST") },
-  {EquationType::phys_CMM,      std::make_tuple(nsd+1, "CM") },
-  {EquationType::phys_shell,    std::make_tuple(nsd,   "SH") },
-  {EquationType::phys_FSI,      std::make_tuple(nsd+1, "FS") },
-  {EquationType::phys_mesh,     std::make_tuple(nsd,   "MS") },
-  {EquationType::phys_CEP,      std::make_tuple(1,     "EP") },
-  {EquationType::phys_stokes,   std::make_tuple(nsd+1, "SS") }
+# include <iostream>
+# include <cstdio>
+
+# include "cvOneDSolverDefinitions.h"
+
+using namespace std;
+
+class cvOneDDenseMatrix{
+  
+  public:
+
+    cvOneDDenseMatrix( long dim, const char* tit = "matrix");
+    cvOneDDenseMatrix( long dim, long* eqNumbers, const char* tit = "matrix");
+    virtual ~cvOneDDenseMatrix();
+    void SetEquationNumbers( long* eqNumbers);
+    void Clear();
+    long GetDimension() const {return dimension;}
+    long* GetEquationNumbers(){return equationNumbers;}
+    double* GetPointerToEntries() {return entries;}
+    void Set( long row, long column, double value);
+    void Add( long row, long column, double value);
+    
+  private:
+
+    void CreateMatrix( long dim, const char* tit = "matrix");
+
+    long dimension;
+    long* equationNumbers;
+    double* entries;
+    char title[MAX_STRING_SIZE + 1];
+
 };
 
+#endif // CVONEDDENSEMATRIXX_H

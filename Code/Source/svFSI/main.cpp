@@ -60,6 +60,9 @@
 #include <cmath>
 #include <fstream>
 
+# include "cvOneDBFSolver.h"
+#include "cvOneDGlobal.h"
+
 /// @brief Read in a solver XML file and all mesh and BC data.  
 //
 void read_files(Simulation* simulation, const std::string& file_name)
@@ -85,7 +88,119 @@ void read_files(Simulation* simulation, const std::string& file_name)
   
 }
 
+void Couple1D(ComMod& com_mod, const CmMod& cm_mod)
+{
+  using namespace consts;
 
+  #define n_debug_Couple1D
+  #ifdef debug_Couple1D
+  DebugMsg dmsg(__func__, com_mod.cm.idcm());
+  #endif
+
+  DebugMsg dmsg(__func__, com_mod.cm.idcm());
+  dmsg.banner();
+
+  for (int iEq = 0; iEq < com_mod.nEq; iEq++) {
+    auto& eq = com_mod.eq[iEq];
+    if (eq.phys == EquationType::phys_fluid) {
+      for (int iBc = 0; iBc < eq.nBc; iBc++) {
+        auto& bc = eq.bc[iBc];
+        int iFa = bc.iFa;
+        int iM = bc.iM;
+        auto& Fa = com_mod.msh[iM].fa[iFa];
+        auto& Yn = com_mod.Yn;
+        auto& cm = com_mod.cm;
+        auto& cpl1D = bc.cpl1D;
+        // dmsg << ">>> bc.iM: " << bc.iM ;
+        // dmsg << ">>> bc.bType:" << bc.bType << endl;
+
+        if(utils::btest(bc.bType, enum_int(BoundaryConditionType::bType_cpl1D))){
+          //边界的计算是按照顺序来的
+          cpl1D.flowEachTime = all_fun::integ(com_mod, cm_mod, Fa, Yn, eq.s, eq.s + com_mod.nsd-1);
+
+            #ifdef debug_Couple1D
+              dmsg.banner();
+              dmsg << ">>> iPr:" << cpl1D.iPr;
+              dmsg << ">>> iBc: " << iBc; 
+              dmsg << ">>> name: " << Fa.name;
+              dmsg << ">>> Fa.nNo: " << Fa.nNo;
+              dmsg << ">>> flowEachTime: " << cpl1D.flowEachTime;  //每个时间步一更新
+            #endif
+
+            // 一维非线性迭代 STRAT
+
+            std::ofstream outFile(cpl1D.outputFileName, std::ios::app); //以追加模式写入
+            std::streambuf *coutbuf = std::cout.rdbuf(); // 保存原始的 std::cout buffer
+            std::cout.rdbuf(outFile.rdbuf()); // 重定向 std::cout 到文件流
+
+            // std::cout << "com_mod.cTS = " << com_mod.cTS << std::endl;
+
+            if (com_mod.cTS == 1){
+              cvOneDBFSolver::GenerateSolution();
+            }
+
+            cvOneDBFSolver::Nonlinear_iter(com_mod.cTS, cpl1D);
+
+            std::cout.rdbuf(coutbuf);
+            outFile.close();
+
+            //END
+
+            // cpl1D.preFrom1DEachTime = 50000;  //test
+            #ifdef debug_Couple1D
+            dmsg << ">>> preFrom1DEachTime: " << cpl1D.preFrom1DEachTime;
+            #endif
+            
+            // 法向量(0,0,1)，每个点的法向量其实有细微出入, 取平均值带入
+            Vector<double> nv_age(com_mod.nsd);
+            for (int i = 0; i < com_mod.nsd; i++){
+              for (int j = 0; j < Fa.nNo; j++){
+                nv_age(i) += Fa.nV(i,j);
+              }
+              nv_age(i) = nv_age(i) / Fa.nNo;
+            }
+
+            for (int i = 0; i < com_mod.nsd; i++){
+              bc.h(i) =  cpl1D.preFrom1DEachTime * nv_age(i);
+            }
+
+            #ifdef debug_Couple1D
+            dmsg << ">>> nV_age: " << nv_age;
+            dmsg << ">>> h: " << bc.h;
+            #endif
+
+             //固定只有一个核进行写入文件操作，在最后一个时间步
+            if (Fa.nV.size() != 0 && com_mod.cTS == cvOneDBFSolver::maxStep){ 
+              // Some Post Processing,一维
+              if(cvOneDGlobal::outputType == OutputTypeScope::OUTPUT_TEXT){
+                cvOneDBFSolver::postprocess_Text();
+              }else if(cvOneDGlobal::outputType == OutputTypeScope::OUTPUT_VTK){
+                if(cvOneDGlobal::vtkOutputType == 0){
+                  // Export in multifile format
+                  cvOneDBFSolver::postprocess_VTK_XML3D_MULTIPLEFILES();
+                }else{
+                  // All results in a single VTK File
+                  cvOneDBFSolver::postprocess_VTK_XML3D_ONEFILE();
+                }
+              }else if(cvOneDGlobal::outputType == OutputTypeScope::OUTPUT_BOTH){
+                cvOneDBFSolver::postprocess_Text();
+                if(cvOneDGlobal::vtkOutputType == 0){
+                  // Export in multifile format
+                  cvOneDBFSolver::postprocess_VTK_XML3D_MULTIPLEFILES();
+                }else{
+                  // All results in a single VTK File
+                  cvOneDBFSolver::postprocess_VTK_XML3D_ONEFILE();
+                }
+              }
+            }
+          }
+          
+          MPI_Barrier(MPI_COMM_WORLD);
+          
+        }
+      }
+    }
+  }
 
 /// @brief Iterate the precomputed state-variables in time using linear interpolation to the current time step size
 //
@@ -121,9 +236,9 @@ void iterate_precomputed_time(Simulation* simulation) {
   double& dt = com_mod.dt;
 
   if (com_mod.usePrecomp) {
-#ifdef debug_iterate_solution
-        dmsg << "Use precomputed values ..." << std::endl;
-#endif
+  #ifdef debug_iterate_solution
+          dmsg << "Use precomputed values ..." << std::endl;
+  #endif
     // This loop is used to interpolate between known time values of the precomputed
     // state-variable solution
     for (int l = 0; l < com_mod.nMsh; l++) {
@@ -192,12 +307,15 @@ void iterate_solution(Simulation* simulation)
   int nsd = com_mod.nsd;
 
   std::cout << std::scientific << std::setprecision(16);
-
+  
   #define n_debug_iterate_solution
   #ifdef debug_iterate_solution
   DebugMsg dmsg(__func__, com_mod.cm.idcm());
   dmsg.banner();
   #endif
+
+  DebugMsg dmsg(__func__, com_mod.cm.idcm());
+  dmsg.banner();
 
   #ifdef debug_iterate_solution
   dmsg << "========== iterate_solution ==========" << std::endl;
@@ -267,6 +385,9 @@ void iterate_solution(Simulation* simulation)
     dmsg << "=============== Outer Loop ============== " << std::endl;
     dmsg << "========================================= " << std::endl;
     #endif
+    dmsg << "========================================= " << std::endl;
+    dmsg << "=============== Outer Loop ============== " << std::endl;
+    dmsg << "========================================= " << std::endl;
 
     // Adjusting the time step size once initialization stage is over
     //
@@ -340,8 +461,9 @@ void iterate_solution(Simulation* simulation)
     int iEqOld;
 
     while (true) { 
+      dmsg << "---------- Inner Loop " + std::to_string(inner_count) << " -----------" ;
       #ifdef debug_iterate_solution
-      dmsg << "---------- Inner Loop " + std::to_string(inner_count) << " -----------" << std::endl;
+      dmsg << "---------- Inner Loop " + std::to_string(inner_count) << " -----------" ;
       dmsg << "cEq: " << cEq;
       dmsg << "com_mod.eq[cEq].sym: " << com_mod.eq[cEq].sym;
       //simulation->com_mod.timer.set_time();
@@ -465,13 +587,13 @@ void iterate_solution(Simulation* simulation)
       if (com_mod.iCntct) {
         contact::construct_contact_pnlty(com_mod, cm_mod, Dg);
 
-#if 0
+      #if 0
         if (cTS <= 2050) {
           Array<double>::write_enabled = true;
           com_mod.R.write("R_"+ std::to_string(cTS));
           //exit(0);
         }
-#endif
+      #endif
       }
 
       // Synchronize R across processes. Note: that it is important
@@ -557,7 +679,7 @@ void iterate_solution(Simulation* simulation)
       dmsg << "Solving equation: " << eq.sym; 
       #endif
 
-      ls_ns::ls_solve(com_mod, eq, incL, res);
+      ls_ns::ls_solve(com_mod, eq, incL, res);  //求解
 
       com_mod.Val.write("Val_solve"+ istr);
       com_mod.R.write("R_solve"+ istr);
@@ -573,7 +695,7 @@ void iterate_solution(Simulation* simulation)
 
       pic::picc(simulation);
       com_mod.Yn.write("Yn_picc"+ istr);
-
+      
       // Writing out the time passed, residual, and etc.
       if (std::count_if(com_mod.eq.begin(),com_mod.eq.end(),[](eqType& eq){return eq.ok;}) == com_mod.eq.size()) { 
         #ifdef debug_iterate_solution
@@ -583,14 +705,17 @@ void iterate_solution(Simulation* simulation)
         break;
       } 
 
-      output::output_result(simulation, com_mod.timeP, 2, iEqOld);
+      output::output_result(simulation, com_mod.timeP, 2, iEqOld); //输出结果
 
       inner_count += 1;
     } // Inner loop
 
+    dmsg << "---------- End of inner loop----------------" << std::endl;
     #ifdef debug_iterate_solution
-    dmsg << ">>> End of inner loop " << std::endl; 
+    dmsg << "---------- End of inner loop----------------" << std::endl; 
     #endif
+     
+    Couple1D(com_mod, cm_mod);
 
     // IB treatment: interpolate flow data on IB mesh from background
     // fluid mesh for explicit coupling, update old solution for implicit
@@ -646,10 +771,9 @@ void iterate_solution(Simulation* simulation)
     if (cm.mas(cm_mod)) {
       if (FILE *fp = fopen(stopTrigName.c_str(), "r")) {
         l1 = true;
-        count = fscanf(fp, "%d", &stopTS);
-
+        count = fscanf(fp, "%d", &stopTS); 
         if (count == 0) {
-          stopTS = cTS;
+          stopTS = cTS; 
         }
         fclose(fp);
 
@@ -720,7 +844,7 @@ void iterate_solution(Simulation* simulation)
     if (l1) {
       break;
     }
-
+    
     // Solution is stored here before replacing it at next time step
     //
     Ao = An;
@@ -734,8 +858,12 @@ void iterate_solution(Simulation* simulation)
   } // End of outer loop
 
   #ifdef debug_iterate_solution
-  dmsg << "End of outer loop" << std::endl;
+  dmsg << "----------- End of outer loop ----------" << std::endl;
   #endif
+  dmsg << std::endl;
+  dmsg << "========================================= " << std::endl;
+  dmsg << "=========== End of Outer Loop =========== " << std::endl;
+  dmsg << "========================================= " << std::endl;
 
   //#ifdef debug_iterate_solution
   //dmsg << "=======  Simulation Finished   ========== " << std::endl;

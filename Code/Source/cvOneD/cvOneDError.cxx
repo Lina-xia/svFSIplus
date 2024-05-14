@@ -1,4 +1,5 @@
-/* Copyright (c) Stanford University, The Regents of the University of California, and others.
+/* Copyright (c) Stanford University, The Regents of the University of
+ *               California, and others.
  *
  * All Rights Reserved.
  *
@@ -28,26 +29,56 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <map>
-#include <tuple>
-
-/// @brief The 'equation_dof_map' map defined here sets equation dof and sym data members. 
 //
-using EquationDofType = std::tuple<int, std::string>; 
+//  Error.cxx: Source file for cvOneDError.handling/Debugging
+//  ~~~~~~~~~
+//
 
-std::map<consts::EquationType, EquationDofType> equation_dof_map =
-{
-  {EquationType::phys_fluid,    std::make_tuple(nsd+1, "NS") },  //自由度数量,简称
-  {EquationType::phys_heatF,    std::make_tuple(1,     "HF") },
-  {EquationType::phys_heatS,    std::make_tuple(1,     "HS") },
-  {EquationType::phys_lElas,    std::make_tuple(nsd,   "LE") },
-  {EquationType::phys_struct,   std::make_tuple(nsd,   "ST") },
-  {EquationType::phys_ustruct,  std::make_tuple(nsd+1, "ST") },
-  {EquationType::phys_CMM,      std::make_tuple(nsd+1, "CM") },
-  {EquationType::phys_shell,    std::make_tuple(nsd,   "SH") },
-  {EquationType::phys_FSI,      std::make_tuple(nsd+1, "FS") },
-  {EquationType::phys_mesh,     std::make_tuple(nsd,   "MS") },
-  {EquationType::phys_CEP,      std::make_tuple(1,     "EP") },
-  {EquationType::phys_stokes,   std::make_tuple(nsd+1, "SS") }
-};
+#include "cvOneDError.h"
 
+using namespace std;
+
+// Declare the static globals
+ErrorType  cvOneDError::ErrorNo;
+char*  cvOneDError::ErrorString;
+ErrorHandlerFunctionPtr cvOneDError::errorHandler;
+int cvOneDError::debugLevel;
+
+// Functions to be used by applications
+ErrorType cvOneDError::getErrorNumber(void){
+  return ErrorNo;
+}
+
+char* cvOneDError::getErrorString(void){
+  return ErrorString;
+}
+
+ErrorHandlerFunctionPtr cvOneDError::setErrorHandler(ErrorHandlerFunctionPtr fcn){
+  errorHandler = fcn;
+  return errorHandler;
+}
+
+void cvOneDError::setDebugLevel(int level){
+  debugLevel = level;
+}
+
+int cvOneDError::getDebugLevel(void){
+  return debugLevel;
+}
+
+// Functions to be used by API
+void cvOneDError::setErrorNumber(ErrorType errorNumber){
+  ErrorNo = errorNumber;
+}
+
+void cvOneDError::setErrorString(char *string){
+  ErrorString = string;
+}
+
+void cvOneDError::CallErrorHandler(void){
+  if(errorHandler == NULL){
+    cerr << "There's an error, but No error handler!" << endl;
+    return;
+  }
+  errorHandler();
+}

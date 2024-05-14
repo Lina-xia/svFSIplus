@@ -1,4 +1,5 @@
-/* Copyright (c) Stanford University, The Regents of the University of California, and others.
+/* Copyright (c) Stanford University, The Regents of the University of
+ *               California, and others.
  *
  * All Rights Reserved.
  *
@@ -28,26 +29,41 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <map>
-#include <tuple>
+#ifndef CVONEDJOINT_H
+#define CVONEDJOINT_H
 
-/// @brief The 'equation_dof_map' map defined here sets equation dof and sym data members. 
 //
-using EquationDofType = std::tuple<int, std::string>; 
+//  cvOneDJoint.h: A data structure for model joints. 
+//
 
-std::map<consts::EquationType, EquationDofType> equation_dof_map =
-{
-  {EquationType::phys_fluid,    std::make_tuple(nsd+1, "NS") },  //自由度数量,简称
-  {EquationType::phys_heatF,    std::make_tuple(1,     "HF") },
-  {EquationType::phys_heatS,    std::make_tuple(1,     "HS") },
-  {EquationType::phys_lElas,    std::make_tuple(nsd,   "LE") },
-  {EquationType::phys_struct,   std::make_tuple(nsd,   "ST") },
-  {EquationType::phys_ustruct,  std::make_tuple(nsd+1, "ST") },
-  {EquationType::phys_CMM,      std::make_tuple(nsd+1, "CM") },
-  {EquationType::phys_shell,    std::make_tuple(nsd,   "SH") },
-  {EquationType::phys_FSI,      std::make_tuple(nsd+1, "FS") },
-  {EquationType::phys_mesh,     std::make_tuple(nsd,   "MS") },
-  {EquationType::phys_CEP,      std::make_tuple(1,     "EP") },
-  {EquationType::phys_stokes,   std::make_tuple(nsd+1, "SS") }
+#include <vector>
+
+#include "cvOneDEnums.h"
+#include "cvOneDSegment.h"
+
+using namespace std;
+
+struct cvOneDBoundCondsJoint{
+  cvOneDBoundCondsJoint(){}
+  ~cvOneDBoundCondsJoint(){}
+  BoundCondType bcType;
+  cvOneDBoundCondsJoint& operator=(const cvOneDBoundCondsJoint& in){return *this;}
+  double bcParameter1; 
+  double bcParameter2;
 };
 
+struct cvOneDJoint{
+  cvOneDJoint(){}
+  ~cvOneDJoint(){}
+  cvOneDJoint& operator=(const cvOneDJoint& in){return *this;}    
+  void setJointID(int i){id = i;}
+  int getNumberOfSegments(){return InletSegments.size()+OutletSegments.size();}
+  char Name[2048];
+  int id;
+  double x, y, z, radius;
+  vector<cvOneDBoundCondsJoint*> theBCs;
+  vector<int> InletSegments;
+  vector<int> OutletSegments;
+};
+
+#endif // CVONEDJOINT_H

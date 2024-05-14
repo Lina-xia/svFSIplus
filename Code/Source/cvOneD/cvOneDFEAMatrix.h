@@ -1,4 +1,5 @@
-/* Copyright (c) Stanford University, The Regents of the University of California, and others.
+/* Copyright (c) Stanford University, The Regents of the University of
+ *               California, and others.
  *
  * All Rights Reserved.
  *
@@ -28,26 +29,44 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <map>
-#include <tuple>
+#ifndef CVONEDFEAMATRIX_H
+#define CVONEDFEAMATRIX_H
 
-/// @brief The 'equation_dof_map' map defined here sets equation dof and sym data members. 
 //
-using EquationDofType = std::tuple<int, std::string>; 
+//  cvOneDSkylineMatrix.h - Solve Skyline Matrices
+//  ~~~~~~~~~~~~~~~~~
+//  matrix storage for direct solver, skyline solver
+//  
 
-std::map<consts::EquationType, EquationDofType> equation_dof_map =
-{
-  {EquationType::phys_fluid,    std::make_tuple(nsd+1, "NS") },  //自由度数量,简称
-  {EquationType::phys_heatF,    std::make_tuple(1,     "HF") },
-  {EquationType::phys_heatS,    std::make_tuple(1,     "HS") },
-  {EquationType::phys_lElas,    std::make_tuple(nsd,   "LE") },
-  {EquationType::phys_struct,   std::make_tuple(nsd,   "ST") },
-  {EquationType::phys_ustruct,  std::make_tuple(nsd+1, "ST") },
-  {EquationType::phys_CMM,      std::make_tuple(nsd+1, "CM") },
-  {EquationType::phys_shell,    std::make_tuple(nsd,   "SH") },
-  {EquationType::phys_FSI,      std::make_tuple(nsd+1, "FS") },
-  {EquationType::phys_mesh,     std::make_tuple(nsd,   "MS") },
-  {EquationType::phys_CEP,      std::make_tuple(1,     "EP") },
-  {EquationType::phys_stokes,   std::make_tuple(nsd+1, "SS") }
+#include <iostream>
+#include "cvOneDSolverDefinitions.h"
+#include "cvOneDDenseMatrix.h"
+
+using namespace std;
+
+// Matrix is stored in descending sky-line format
+class cvOneDFEAMatrix{
+  protected:
+
+    char title[MAX_STRING_SIZE + 1];
+  
+  public:
+
+    cvOneDFEAMatrix(const char* tit);
+    virtual ~cvOneDFEAMatrix();
+
+    // VIRTUAL FUNCTIONS
+    virtual void Add(cvOneDDenseMatrix& matrix) = 0;
+    virtual void AddValue( long row, long column, double value) = 0;
+    virtual void SetValue(long row, long column, double value) = 0;
+    virtual void Clear() = 0;
+    virtual void ClearRow(long row) = 0;
+    virtual void ClearColumn(long column) = 0;
+    virtual double GetValue(long row, long column) = 0;
+    virtual long GetDimension() const = 0;
+    // print matrix
+    virtual void print(std::ostream &os) = 0;
+
 };
 
+#endif // CVONEDFEAMATRIX_H

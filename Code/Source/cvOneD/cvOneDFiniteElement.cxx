@@ -1,4 +1,5 @@
-/* Copyright (c) Stanford University, The Regents of the University of California, and others.
+/* Copyright (c) Stanford University, The Regents of the University of
+ *               California, and others.
  *
  * All Rights Reserved.
  *
@@ -28,26 +29,55 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <map>
-#include <tuple>
-
-/// @brief The 'equation_dof_map' map defined here sets equation dof and sym data members. 
 //
-using EquationDofType = std::tuple<int, std::string>; 
+//  FiniteElement.cxx - Source for a class to handle individual finite elements
+//  ~~~~~~~~~~~~~~~~~
+//  
+//  This class abstracts the finite element one-dimensional shape function
+//
 
-std::map<consts::EquationType, EquationDofType> equation_dof_map =
-{
-  {EquationType::phys_fluid,    std::make_tuple(nsd+1, "NS") },  //自由度数量,简称
-  {EquationType::phys_heatF,    std::make_tuple(1,     "HF") },
-  {EquationType::phys_heatS,    std::make_tuple(1,     "HS") },
-  {EquationType::phys_lElas,    std::make_tuple(nsd,   "LE") },
-  {EquationType::phys_struct,   std::make_tuple(nsd,   "ST") },
-  {EquationType::phys_ustruct,  std::make_tuple(nsd+1, "ST") },
-  {EquationType::phys_CMM,      std::make_tuple(nsd+1, "CM") },
-  {EquationType::phys_shell,    std::make_tuple(nsd,   "SH") },
-  {EquationType::phys_FSI,      std::make_tuple(nsd+1, "FS") },
-  {EquationType::phys_mesh,     std::make_tuple(nsd,   "MS") },
-  {EquationType::phys_CEP,      std::make_tuple(1,     "EP") },
-  {EquationType::phys_stokes,   std::make_tuple(nsd+1, "SS") }
-};
+#include <cassert>
 
+#include "cvOneDFiniteElement.h"
+
+// Constuctor
+cvOneDFiniteElement::cvOneDFiniteElement(){
+  wasSet = false;
+}
+
+// Destructor
+cvOneDFiniteElement::~cvOneDFiniteElement(){
+
+}
+
+void cvOneDFiniteElement::Set(double* nd, long* conn){
+  nodes[0] = nd[0];
+  nodes[1] = nd[1];
+  
+  connectivity[0] = conn[0];
+  connectivity[1] = conn[1];
+  
+  wasSet = true;
+}
+
+void cvOneDFiniteElement::Evaluate(double xi, double* shape, double* DxShape, double* jacobian)const{
+  assert( wasSet);
+  
+  shape[0] = 0.5 * (1.0 - xi);
+  shape[1] = 0.5 * (1.0 + xi);
+  
+  *jacobian = 0.5 * (nodes[1] - nodes[0]);
+  
+  DxShape[0] = -0.5 / (*jacobian);
+  DxShape[1] = 0.5 / (*jacobian);
+}
+
+double cvOneDFiniteElement::Interpolate(double xi, double* values)const{
+  double shape[2];
+  double aux1[2]; // redundant pointer
+  double aux2;    // redundant value
+  
+  Evaluate(xi, shape, aux1, &aux2);
+  
+  return values[0] * shape[0] + values[1] * shape[1];
+}

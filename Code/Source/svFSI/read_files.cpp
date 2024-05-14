@@ -45,11 +45,14 @@
 #include "fsils_api.hpp"
 #include "fils_struct.hpp"
 
+#include "cvOneD.h"
+
 #include <fstream>
 #include <functional>
 #include <math.h>
 #include <sstream>
 #include <vector>
+#include <fstream>
 
 namespace read_files_ns {
 
@@ -203,7 +206,54 @@ void read_bc(Simulation* simulation, EquationParameters* eq_params, eqType& lEq,
     lBc.bType = utils::ibset(lBc.bType, enum_int(BoundaryConditionType::bType_Neu)); 
 
   } else if (std::set<std::string>{"Coupled Momentum","CMM"}.count(bc_type)) {
-    lBc.bType = utils::ibset(lBc.bType, enum_int(BoundaryConditionType::bType_CMM)); 
+    lBc.bType = utils::ibset(lBc.bType, enum_int(BoundaryConditionType::bType_CMM));
+  
+  } else if (std::set<std::string>{"Couple1D","Cpl1D"}.count(bc_type)){
+    lBc.bType = utils::ibset(lBc.bType, enum_int(BoundaryConditionType::bType_cpl1D));
+    lBc.bType = utils::ibset(lBc.bType, enum_int(BoundaryConditionType::bType_trac));
+    lBc.bType = utils::ibset(lBc.bType, enum_int(BoundaryConditionType::bType_std));
+
+    //寻找name.in读取,并创建name.out
+    std::string FileName = simulation->com_mod.msh[lBc.iM].fa[lBc.iFa].name;
+    std::string inputName = FileName + std::string(".in");
+    std::string outputName = FileName + std::string(".out");
+
+    lBc.cpl1D.outputFileName = outputName;
+    // 这里还需要规定仅一个核执行,
+    // 多个耦合边界的时候,不同的核执行不同的一维运算并输出,可能会导致输出混乱,输出的重定向只输出到最后一个打开的文件
+    std::ofstream outFile(outputName);
+    std::streambuf *coutbuf = std::cout.rdbuf(); // 保存原始的 std::cout buffer
+    std::cout.rdbuf(outFile.rdbuf()); // 重定向 std::cout 到文件流
+
+    // 输出流只有主进程？
+    DebugMsg dmsg(__func__, simulation->com_mod.cm.idcm());
+    // int mpi_rank;
+    // MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+    // dmsg << "mpi_rank: " << mpi_rank;
+
+    WriteHeader();
+    
+    cvOneDOptions* opts = &lBc.cpl1D.opts;
+    // cvOneDModelManager* oned = &lBc.cpl1D.manager;
+
+    // Read Model From File
+    readModel(inputName, opts);
+
+    // Model Checking
+    opts->check();
+
+    //判断时间步长，最终时间和出口的点是否一致;怎么判断接口是否一致？？
+    if(opts->timeStep != simulation->com_mod.dt){
+      throw std::runtime_error("[read_bc_cpl1D] The time steps of three and one dimensions do not agree.");
+    }
+    if(opts->maxStep != simulation->com_mod.nTS){
+      throw std::runtime_error("[read_bc_cpl1D] The number of time steps of three and one dimensions do not agree.");
+    }
+
+    createAndRunModel(opts);
+
+    std::cout.rdbuf(coutbuf);
+    outFile.close();
 
   } else {
     throw std::runtime_error("[read_bc] Unknown boundary condition type '" + bc_type + "'.");

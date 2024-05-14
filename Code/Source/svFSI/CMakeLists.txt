@@ -1,4 +1,3 @@
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
@@ -206,12 +205,122 @@ if(USE_TRILINOS)
   link_directories(${Trilinos_TPL_LIBRARY_DIRS})
 endif()
 
-simvascular_add_executable(${SV_SVFSI_EXE}
-  SRCS ${CSRCS}
-  DEV_SCRIPT_NAME "mysvfsi"
-  INSTALL_SCRIPT_NAME "svfsi"
-  INSTALL_COMP CoreExecutables
-  INSTALL_DESTINATION ${SV_INSTALL_RUNTIME_DIR})
+
+# xia
+IF(sparseSolverType STREQUAL "skyline")
+  FILE(GLOB SRC_C "${CMAKE_CURRENT_SOURCE_DIR}/../../cvOneD/*.c"
+                  "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/*.cxx")
+  FILE(GLOB SRC_H "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/*.h")
+
+  set(SRC_C ${SRC_C} CACHE INTERNAL "List of cvOneD source files")
+  set(SRC_H ${SRC_H} CACHE INTERNAL "List of cvOneD head files")
+
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD)
+  LINK_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD)
+  # message("CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
+
+  simvascular_add_executable(${SV_SVFSI_EXE}
+      SRCS ${CSRCS} ${SRC_C} ${SRC_H}
+      DEV_SCRIPT_NAME "mysvfsi"
+      INSTALL_SCRIPT_NAME "svfsi"
+      INSTALL_COMP CoreExecutables
+      INSTALL_DESTINATION ${SV_INSTALL_RUNTIME_DIR})
+
+  target_compile_definitions(${SV_SVFSI_EXE} PRIVATE USE_SKYLINE)
+
+  # message(STATUS "SRC_C of svFSI: ${SRC_C}")
+
+ELSEIF(sparseSolverType STREQUAL "superlu")
+
+  # FIND BLAS
+  FIND_PACKAGE(BLAS REQUIRED)
+  IF(BLAS_FOUND)
+    INCLUDE_DIRECTORIES(${BLAS_INCLUDE_DIRS})
+  ENDIF()
+
+  # CHECK IF SUPERLU_DIR IS STILL UNDEFINED
+  IF(${SUPERLU_DIR} STREQUAL " ")
+    MESSAGE(FATAL_ERROR "The SUPERLU_DIR folder is undefined.\
+                         Please enter the path to the superLU_MT library.")
+  ENDIF()
+
+  # CHECK IF SUPERLU_DIR EXISTS
+  IF(EXISTS ${SUPERLU_DIR})
+
+    SET(SUPERLU_INCLUDE_DIRS "${SUPERLU_DIR}")
+    SET(SUPERLU_LIBRARY "${SUPERLU_DIR}/lib/libsuperlu_mt_PTHREAD.a")
+
+    MESSAGE(STATUS "SuperLU Includes: ${SUPERLU_INCLUDE_DIRS}")
+    MESSAGE(STATUS "SuperLU Library: ${SUPERLU_LIBRARY}")
+
+  ELSE()
+    MESSAGE(FATAL_ERROR "The SUPERLU_DIR folder is invalid.\
+                         Please enter the path to the superLU_MT library.")
+  ENDIF()
+
+  # ADD FILES IN ADDITIONAL FOLDERS
+  FILE(GLOB SUPERLU_SRC_C "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/*.c"
+                          "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/*.cpp"
+                          "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/superlu/*.c"
+                          "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/superlu/*.cpp")
+  FILE(GLOB SUPERLU_SRC_H "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/*.h"
+                          "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/superlu/*.h")
+
+  set(SUPERLU_SRC_C ${SUPERLU_SRC_C} CACHE INTERNAL "List of cvOneD supeLU source files")
+  set(SUPERLU_SRC_H ${SUPERLU_SRC_H} CACHE INTERNAL "List of cvOneD superLU head files")
+
+  # INCLUDE DIRECTORIES
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD
+                      ${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse 
+                      ${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/superlu
+                      ${SUPERLU_INCLUDE_DIRS})
+
+  # LINK DIRECTORIES
+  LINK_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/
+                   ${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse 
+                   ${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/superlu)
+
+  simvascular_add_executable(${SV_SVFSI_EXE}
+            SRCS ${CSRCS} ${SRC_C} ${SRC_H} ${SUPERLU_SRC_C} ${SUPERLU_SRC_H}
+            DEV_SCRIPT_NAME "mysvfsi"
+            INSTALL_SCRIPT_NAME "svfsi"
+            INSTALL_COMP CoreExecutables
+            INSTALL_DESTINATION ${SV_INSTALL_RUNTIME_DIR})
+  target_compile_definitions(${SV_SVFSI_EXE} PRIVATE USE_SUPERLU)
+
+
+ELSEIF(sparseSolverType STREQUAL "csparse")
+
+  # ADD FILES IN ADDITIONAL FOLDERS
+  FILE(GLOB CSPARSE_SRC_C "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/*.c"
+                          "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/*.cpp"
+                          "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/csparse/*.c"
+                          "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/csparse/*.cpp")
+  FILE(GLOB CSPARSE_SRC_H "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/*.h"
+                          "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/csparse/*.h")
+
+  set(CSPARSE_SRC_C ${CSPARSE_SRC_C} CACHE INTERNAL "List of cvOneD supeLU source files")
+  set(CSPARSE_SRC_H ${CSPARSE_SRC_H} CACHE INTERNAL "List of cvOneD superLU head files")
+
+  # INCLUDE DIRECTORIES
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD
+                      ${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse 
+                      ${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/csparse)
+
+  # LINK DIRECTORIES
+  LINK_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD
+                   ${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse 
+                   ${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/csparse)
+
+  simvascular_add_executable(${SV_SVFSI_EXE}
+        SRCS ${CSRCS} ${SRC_C} ${SRC_H} ${CSPARSE_SRC_C} ${CSPARSE_SRC_H}
+        DEV_SCRIPT_NAME "mysvfsi"
+        INSTALL_SCRIPT_NAME "svfsi"
+        INSTALL_COMP CoreExecutables
+        INSTALL_DESTINATION ${SV_INSTALL_RUNTIME_DIR})
+  target_compile_definitions(${SV_SVFSI_EXE} PRIVATE USE_CSPARSE)
+
+ENDIF()
 
 target_link_libraries(${SV_SVFSI_EXE}
   ${GLOBAL_LIBRARIES}
@@ -223,7 +332,8 @@ target_link_libraries(${SV_SVFSI_EXE}
   ${PARMETIS_SVFSI_LIBRARY_NAME}
   ${TETGEN_LIBRARY_NAME}
   ${TINYXML_LIBRARY_NAME}
-  ${SV_LIB_SVFSILS_NAME}${SV_MPI_NAME_EXT}
+  ${SV_LIB_SVFSILS_NAME}
+  ${SV_MPI_NAME_EXT}
   ${VTK_LIBRARIES}
   )
 
@@ -296,7 +406,8 @@ if(ENABLE_UNIT_TEST)
     ${PARMETIS_SVFSI_LIBRARY_NAME}
     ${TETGEN_LIBRARY_NAME}
     ${TINYXML_LIBRARY_NAME}
-    ${SV_LIB_SVFSILS_NAME}${SV_MPI_NAME_EXT}
+    ${SV_LIB_SVFSILS_NAME}
+    ${SV_MPI_NAME_EXT}
     ${VTK_LIBRARIES}
   )
 

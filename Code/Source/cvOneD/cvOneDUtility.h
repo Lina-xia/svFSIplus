@@ -1,4 +1,5 @@
-/* Copyright (c) Stanford University, The Regents of the University of California, and others.
+/* Copyright (c) Stanford University, The Regents of the University of
+ *               California, and others.
  *
  * All Rights Reserved.
  *
@@ -28,26 +29,51 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <map>
-#include <tuple>
+#ifndef CVONEDUTILITY_H
+#define CVONEDUTILITY_H
 
-/// @brief The 'equation_dof_map' map defined here sets equation dof and sym data members. 
 //
-using EquationDofType = std::tuple<int, std::string>; 
+//  cvOneDUtility.h - Header for Some Utility functions and rules of random point quadratures.
+//  ~~~~~~~~~~~   
+//  
 
-std::map<consts::EquationType, EquationDofType> equation_dof_map =
-{
-  {EquationType::phys_fluid,    std::make_tuple(nsd+1, "NS") },  //自由度数量,简称
-  {EquationType::phys_heatF,    std::make_tuple(1,     "HF") },
-  {EquationType::phys_heatS,    std::make_tuple(1,     "HS") },
-  {EquationType::phys_lElas,    std::make_tuple(nsd,   "LE") },
-  {EquationType::phys_struct,   std::make_tuple(nsd,   "ST") },
-  {EquationType::phys_ustruct,  std::make_tuple(nsd+1, "ST") },
-  {EquationType::phys_CMM,      std::make_tuple(nsd+1, "CM") },
-  {EquationType::phys_shell,    std::make_tuple(nsd,   "SH") },
-  {EquationType::phys_FSI,      std::make_tuple(nsd+1, "FS") },
-  {EquationType::phys_mesh,     std::make_tuple(nsd,   "MS") },
-  {EquationType::phys_CEP,      std::make_tuple(1,     "EP") },
-  {EquationType::phys_stokes,   std::make_tuple(nsd+1, "SS") }
+# include <cmath>
+# include <iostream>
+# include <cstdarg>
+# include <cassert>
+# include <string>
+
+# include "cvOneDTypes.h"
+# include "cvOneDException.h"
+
+const int MaxChar = 128;
+
+std::vector<std::string> split_string(std::string& s, const std::string& delims);
+std::string trim_string(const std::string& s);
+std::string upper_string(const std::string& s);
+
+long min(long a, long b);
+long max( long a, long b);	
+long min( long size, long* values);
+long sum( long size, long* values);	
+void clear( long size, long* vec);	
+// Calculates the modulus of the 2x2 matrix A and put the results
+// in modulusA using Cayley-Hamilton theory
+void GetModulus(double* A, double* modulusA);
+
+class cvOneDQuadrature{
+  public:
+    cvOneDQuadrature( int n);
+    ~cvOneDQuadrature();
+    void Get( double* w, double* x) const;
+
+  private:	
+  	// number of integration points in the quadrature
+    int npts;  
+    double* xi;
+    double* weights;
 };
 
+int getListIDWithStringKey(string key,cvStringVec list);
+
+#endif // CVONEDUTILITY_H
