@@ -596,11 +596,11 @@ void dist_bc(ComMod& com_mod, const CmMod& cm_mod, const cmType& cm, bcType& lBc
     cm.bcast(cm_mod, &lBc.RCR.Xo);
   }
 
-  if (utils::btest(lBc.bType, static_cast<int>(BoundaryConditionType::bType_cpl1D))) {
-    cm.bcast(cm_mod, &lBc.cpl1D.flowEachTime);
-    cm.bcast(cm_mod, &lBc.cpl1D.preFrom1DEachTime);
-    cm.bcast(cm_mod, &lBc.cpl1D.q);
-  }
+  // if (utils::btest(lBc.bType, static_cast<int>(BoundaryConditionType::bType_cpl1D))) {
+  //   cm.bcast(cm_mod, &lBc.cpl1D.flowEachTime);
+  //   cm.bcast(cm_mod, &lBc.cpl1D.preFrom1DEachTime);
+  //   cm.bcast(cm_mod, &lBc.cpl1D.q);
+  // }
 
   // Communicating time-dependent BC data
   //

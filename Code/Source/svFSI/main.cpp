@@ -60,7 +60,6 @@
 #include <cmath>
 #include <fstream>
 
-# include "cvOneDBFSolver.h"
 #include "cvOneDGlobal.h"
 
 /// @brief Read in a solver XML file and all mesh and BC data.  
@@ -136,10 +135,10 @@ void Couple1D(ComMod& com_mod, const CmMod& cm_mod)
             // std::cout << "com_mod.cTS = " << com_mod.cTS << std::endl;
 
             if (com_mod.cTS == 1){
-              cvOneDBFSolver::GenerateSolution();
+              cpl1DType::GenerateSolution();
             }
 
-            cvOneDBFSolver::Nonlinear_iter(com_mod.cTS, cpl1D);
+            cpl1D.Nonlinear_iter(com_mod.cTS);
 
             std::cout.rdbuf(coutbuf);
             outFile.close();
@@ -170,26 +169,26 @@ void Couple1D(ComMod& com_mod, const CmMod& cm_mod)
             #endif
 
              //固定只有一个核进行写入文件操作，在最后一个时间步
-            if (Fa.nV.size() != 0 && com_mod.cTS == cvOneDBFSolver::maxStep){ 
+            if (Fa.nV.size() != 0 && com_mod.cTS == cpl1DType::maxStep){ 
               // Some Post Processing,一维
               if(cvOneDGlobal::outputType == OutputTypeScope::OUTPUT_TEXT){
-                cvOneDBFSolver::postprocess_Text();
+                cpl1DType::postprocess_Text();
               }else if(cvOneDGlobal::outputType == OutputTypeScope::OUTPUT_VTK){
                 if(cvOneDGlobal::vtkOutputType == 0){
                   // Export in multifile format
-                  cvOneDBFSolver::postprocess_VTK_XML3D_MULTIPLEFILES();
+                  cpl1DType::postprocess_VTK_XML3D_MULTIPLEFILES();
                 }else{
                   // All results in a single VTK File
-                  cvOneDBFSolver::postprocess_VTK_XML3D_ONEFILE();
+                  cpl1DType::postprocess_VTK_XML3D_ONEFILE();
                 }
               }else if(cvOneDGlobal::outputType == OutputTypeScope::OUTPUT_BOTH){
-                cvOneDBFSolver::postprocess_Text();
+                cpl1DType::postprocess_Text();
                 if(cvOneDGlobal::vtkOutputType == 0){
                   // Export in multifile format
-                  cvOneDBFSolver::postprocess_VTK_XML3D_MULTIPLEFILES();
+                  cpl1DType::postprocess_VTK_XML3D_MULTIPLEFILES();
                 }else{
                   // All results in a single VTK File
-                  cvOneDBFSolver::postprocess_VTK_XML3D_ONEFILE();
+                  cpl1DType::postprocess_VTK_XML3D_ONEFILE();
                 }
               }
             }

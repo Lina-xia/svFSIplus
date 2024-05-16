@@ -232,7 +232,8 @@ void read_bc(Simulation* simulation, EquationParameters* eq_params, eqType& lEq,
     // dmsg << "mpi_rank: " << mpi_rank;
 
     WriteHeader();
-    
+
+    //传递
     cvOneDOptions* opts = &lBc.cpl1D.opts;
     // cvOneDModelManager* oned = &lBc.cpl1D.manager;
 

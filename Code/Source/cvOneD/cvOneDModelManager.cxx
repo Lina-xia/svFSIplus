@@ -30,6 +30,7 @@
  */
 
 #include "cvOneDModelManager.h"
+#include "ComMod.h"
 
 cvOneDModelManager::cvOneDModelManager(char *mdlName){
   // We're creating a model
@@ -261,22 +262,22 @@ int cvOneDModelManager::SolveModel(double dt, long stepSize,
   // Set Solver Options
   cvOneDMthSegmentModel::STABILIZATION = usestab; // 1=stabilization, 0=none
   cvOneDGlobal::CONSERVATION_FORM = useIV;
-  cvOneDBFSolver::ASCII = 1;
+  cpl1DType::ASCII = 1;
 
-  cvOneDBFSolver::SetModelPtr(cvOneDGlobal::gModelList[cvOneDGlobal::currentModel]);
+  cpl1DType::SetModelPtr(cvOneDGlobal::gModelList[cvOneDGlobal::currentModel]);
 
   // We need to get these from the solver
-  cvOneDBFSolver::SetDeltaTime(dt);
-  cvOneDBFSolver::SetStepSize(stepSize);
-  cvOneDBFSolver::SetMaxStep(maxStep);
-  cvOneDBFSolver::SetQuadPoints(quadPoints);
-  cvOneDBFSolver::SetInletBCType(boundT);
-  cvOneDBFSolver::DefineInletFlow(times, values, len);
-  cvOneDBFSolver::SetConvergenceCriteria(conv);
+  cpl1DType::SetDeltaTime(dt);
+  cpl1DType::SetStepSize(stepSize);
+  cpl1DType::SetMaxStep(maxStep);
+  cpl1DType::SetQuadPoints(quadPoints);
+  cpl1DType::SetInletBCType(boundT);
+  cpl1DType::DefineInletFlow(times, values, len);
+  cpl1DType::SetConvergenceCriteria(conv);
 
   cvOneDGlobal::isSolving = true;
 
-  cvOneDBFSolver::Solve();
+  cpl1DType::Solve();
 
   cvOneDGlobal::isSolving = false;
 
@@ -302,21 +303,21 @@ int cvOneDModelManager::SolveModel(double dt, long stepSize,
   // Set Solver Options
   cvOneDMthSegmentModel::STABILIZATION = usestab; // 1=stabilization, 0=none
   cvOneDGlobal::CONSERVATION_FORM = useIV;
-  cvOneDBFSolver::ASCII = 1;
+  cpl1DType::ASCII = 1;
 
-  cvOneDBFSolver::SetModelPtr(cvOneDGlobal::gModelList[cvOneDGlobal::currentModel]);
+  cpl1DType::SetModelPtr(cvOneDGlobal::gModelList[cvOneDGlobal::currentModel]);
 
   // We need to get these from the solver
-  cvOneDBFSolver::SetDeltaTime(dt);
-  cvOneDBFSolver::SetStepSize(stepSize);
-  cvOneDBFSolver::SetMaxStep(maxStep);
-  cvOneDBFSolver::SetQuadPoints(quadPoints);
-  cvOneDBFSolver::SetInletBCType(boundT);
-  cvOneDBFSolver::SetConvergenceCriteria(conv);
+  cpl1DType::SetDeltaTime(dt);
+  cpl1DType::SetStepSize(stepSize);
+  cpl1DType::SetMaxStep(maxStep);
+  cpl1DType::SetQuadPoints(quadPoints);
+  cpl1DType::SetInletBCType(boundT);
+  cpl1DType::SetConvergenceCriteria(conv);
 
   cvOneDGlobal::isSolving = true;
 
-  cvOneDBFSolver::Solve();
+  cpl1DType::Solve();
 
   cvOneDGlobal::isSolving = false;
 

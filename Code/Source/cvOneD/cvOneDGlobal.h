@@ -39,7 +39,6 @@
 # include "cvOneDMthSegmentModel.h"
 # include "cvOneDDataTable.h"
 # include "cvOneDLinearSolver.h"
-# include "cvOneDBFSolver.h"
 
 using namespace std;
 
@@ -68,9 +67,6 @@ class cvOneDGlobal{
 
     // GLOBAL Mth SEGMENT MODEL
     static cvOneDMthSegmentModel* gMthSegmentModel;
-
-    // GLOBAL SOLVER INSTANCE
-    static cvOneDBFSolver* gBFSolver;
 
     // GLOBAL VECTOR OF DATATABLES
     static vector<cvOneDDataTable*> gDataTables;

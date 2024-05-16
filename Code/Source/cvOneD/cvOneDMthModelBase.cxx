@@ -47,6 +47,7 @@
 # include "cvOneDDenseMatrix.h"
 # include "cvOneDMaterial.h"
 # include "cvOneDFiniteElement.h"
+# include "ComMod.h"
 
 
 // Static Declarations...
@@ -132,7 +133,7 @@ void cvOneDMthModelBase::SetBoundaryConditions(){
 
   // Set up Inlet Dirichlet boundary condition (the default is flow rate)
   GetNodalEquationNumbers( 0, eqNumbers, 0);
-  switch(cvOneDBFSolver::inletBCtype){
+  switch(cpl1DType::inletBCtype){
     case BoundCondTypeScope::FLOW:
     case BoundCondTypeScope::THREEDCOUPLING:
       (*currSolution)[eqNumbers[1]] = CurrentInletFlow;  //GetFlowRate();
@@ -197,7 +198,7 @@ double cvOneDMthModelBase::CheckMassBalance(){
   long eqNumbers[2];  // Two degress of freedom per node
   double inletFlow;
 
-  if(cvOneDBFSolver::inletBCtype == BoundCondTypeScope::FLOW || BoundCondTypeScope::THREEDCOUPLING){
+  if(cpl1DType::inletBCtype == BoundCondTypeScope::FLOW || BoundCondTypeScope::THREEDCOUPLING){
     inletFlow = CurrentInletFlow;
   }else{
    GetNodalEquationNumbers( 0, eqNumbers, 0);
@@ -234,10 +235,10 @@ void cvOneDMthModelBase::ApplyBoundaryConditions(){
     // Set up the inlet Dirichlet boundary condition (flow rate)
     // RHS corresponding to imposed Essential BC
     value = 0.0;
-    if(cvOneDBFSolver::inletBCtype == BoundCondTypeScope::FLOW || cvOneDBFSolver::inletBCtype == BoundCondTypeScope::THREEDCOUPLING){
+    if(cpl1DType::inletBCtype == BoundCondTypeScope::FLOW || cpl1DType::inletBCtype == BoundCondTypeScope::THREEDCOUPLING){
       GetNodalEquationNumbers(0, eqNumbers, 0);
       cvOneDGlobal::solver->SetSolution(eqNumbers[1], value);
-    }else if (cvOneDBFSolver::inletBCtype == BoundCondTypeScope::PRESSURE_WAVE){
+    }else if (cpl1DType::inletBCtype == BoundCondTypeScope::PRESSURE_WAVE){
       GetNodalEquationNumbers(0, eqNumbers, 0);
       cvOneDGlobal::solver->SetSolution(eqNumbers[0], value);
     }
@@ -317,10 +318,10 @@ void cvOneDMthModelBase::ApplyBoundaryConditions(){
       // for these BC the Inlet term doesn't have to be specialized
       // so same treatment as regular Essential BC like in Brooke's
       value = 0.0;  // RHS corresponding to imposed Essential BC
-      if(cvOneDBFSolver::inletBCtype == BoundCondTypeScope::FLOW || cvOneDBFSolver::inletBCtype == BoundCondTypeScope::THREEDCOUPLING){
+      if(cpl1DType::inletBCtype == BoundCondTypeScope::FLOW || cpl1DType::inletBCtype == BoundCondTypeScope::THREEDCOUPLING){
         GetNodalEquationNumbers( 0, eqNumbers, 0);
         cvOneDGlobal::solver->SetSolution( eqNumbers[1], value);
-      }else if (cvOneDBFSolver::inletBCtype == BoundCondTypeScope::PRESSURE_WAVE){
+      }else if (cpl1DType::inletBCtype == BoundCondTypeScope::PRESSURE_WAVE){
         GetNodalEquationNumbers( 0, eqNumbers, 0);
         cvOneDGlobal::solver->SetSolution( eqNumbers[0], value);
       }
