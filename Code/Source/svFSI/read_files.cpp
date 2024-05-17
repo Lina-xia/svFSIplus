@@ -46,6 +46,7 @@
 #include "fils_struct.hpp"
 
 #include "cvOneD.h"
+#include "cpl1DType.h"
 
 #include <fstream>
 #include <functional>
@@ -218,6 +219,10 @@ void read_bc(Simulation* simulation, EquationParameters* eq_params, eqType& lEq,
     std::string inputName = FileName + std::string(".in");
     std::string outputName = FileName + std::string(".out");
 
+    //一些别名
+    auto& com_mod = simulation->com_mod;
+    cvOneDOptions* opts = &lBc.cpl1D.opts;
+    
     lBc.cpl1D.outputFileName = outputName;
     // 这里还需要规定仅一个核执行,
     // 多个耦合边界的时候,不同的核执行不同的一维运算并输出,可能会导致输出混乱,输出的重定向只输出到最后一个打开的文件
@@ -233,23 +238,17 @@ void read_bc(Simulation* simulation, EquationParameters* eq_params, eqType& lEq,
 
     WriteHeader();
 
-    //传递
-    cvOneDOptions* opts = &lBc.cpl1D.opts;
-    // cvOneDModelManager* oned = &lBc.cpl1D.manager;
-
     // Read Model From File
+    cvOneDOptions::timeStep = com_mod.dt;
+    cvOneDOptions::stepSize = com_mod.saveIncr;
+    cvOneDOptions::maxStep = com_mod.nTS;
+
     readModel(inputName, opts);
 
     // Model Checking
     opts->check();
 
-    //判断时间步长，最终时间和出口的点是否一致;怎么判断接口是否一致？？
-    if(opts->timeStep != simulation->com_mod.dt){
-      throw std::runtime_error("[read_bc_cpl1D] The time steps of three and one dimensions do not agree.");
-    }
-    if(opts->maxStep != simulation->com_mod.nTS){
-      throw std::runtime_error("[read_bc_cpl1D] The number of time steps of three and one dimensions do not agree.");
-    }
+    //怎么判断接口三维一维是否一致？？
 
     createAndRunModel(opts);
 

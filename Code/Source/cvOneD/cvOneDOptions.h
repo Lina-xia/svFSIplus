@@ -107,10 +107,10 @@ class cvOneDOptions{
     cvStringVec segmentBoundType;
     cvStringVec segmentDataTableName;
 
-    // SOLVER OPTIONS
-    double timeStep;
-    long   stepSize;
-    long   maxStep;
+    // SOLVER OPTIONS,读取三维的
+    static double timeStep;  //dt
+    static long   stepSize;  //incre
+    static long   maxStep;
     long   quadPoints;
     string inletDataTableName;
     string boundaryType;

@@ -53,6 +53,7 @@
 #include "txt.h"
 #include "ustruct.h"
 #include "vtk_xml.h"
+#include "cpl1DType.h"
 
 #include <stdlib.h>
 #include <iomanip>

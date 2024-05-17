@@ -188,6 +188,8 @@ set(CSRCS
   Timer.h
 
   SPLIT.c
+  
+  cpl1DType.h cpl1DType.cpp
 )
 
   # Set PETSc interace code.

@@ -30,6 +30,9 @@
  */
 
 #include "cvOneDOptions.h"
+double cvOneDOptions::timeStep = 0;
+long   cvOneDOptions::stepSize = 0;  //incre
+long   cvOneDOptions::maxStep = 0;
 
 // CONSTRUCTOR
 cvOneDOptions::cvOneDOptions(){

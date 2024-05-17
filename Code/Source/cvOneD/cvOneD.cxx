@@ -496,30 +496,24 @@ void readModelFile(string inputFile, cvOneDOptions* opts, cvStringVec includedFi
         if(opts->solverOptionDefined){
           throw cvException("ERROR: SOLVEROPTIONS already defined\n");
         }
-        if(tokenizedString.size() > 10){
+        if(tokenizedString.size() > 7){
           throw cvException(string("ERROR: Too many parameters for SOLVEROPTIONS token. Line " + to_string(lineCount) + "\n").c_str());
-        }else if(tokenizedString.size() < 10){
+        }else if(tokenizedString.size() < 7){
           throw cvException(string("ERROR: Not enough parameters for SOLVEROPTIONS token. Line " + to_string(lineCount) + "\n").c_str());
         }
         try{
-          // double dt,
-          opts->timeStep = atof(tokenizedString[1].c_str());
-          // long stepSize,
-          opts->stepSize = atof(tokenizedString[2].c_str());
-          // long maxStep,
-          opts->maxStep = atof(tokenizedString[3].c_str());
           // long quadPoints,
-          opts->quadPoints = atoi(tokenizedString[4].c_str());
+          opts->quadPoints = atoi(tokenizedString[1].c_str());
           // int CurveID,
-          opts->inletDataTableName = tokenizedString[5].c_str();
+          opts->inletDataTableName = tokenizedString[2].c_str();
           // char* boundType,
-          opts->boundaryType = tokenizedString[6];
+          opts->boundaryType = tokenizedString[3];
           // double conv,
-          opts->convergenceTolerance = atof(tokenizedString[7].c_str());
+          opts->convergenceTolerance = atof(tokenizedString[4].c_str());
           // int useIV,
-          opts->useIV = atoi(tokenizedString[8].c_str());
+          opts->useIV = atoi(tokenizedString[5].c_str());
           // int usestab
-          opts->useStab = atoi(tokenizedString[9].c_str());
+          opts->useStab = atoi(tokenizedString[6].c_str());
         }catch(...){
           throw cvException(string("ERROR: Invalid SOLVEROPTIONS Format. Line " + to_string(lineCount) + "\n").c_str());
         }

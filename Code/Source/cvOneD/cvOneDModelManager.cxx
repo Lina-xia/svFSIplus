@@ -30,7 +30,7 @@
  */
 
 #include "cvOneDModelManager.h"
-#include "ComMod.h"
+#include "cpl1DType.h"
 
 cvOneDModelManager::cvOneDModelManager(char *mdlName){
   // We're creating a model

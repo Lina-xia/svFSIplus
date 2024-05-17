@@ -47,7 +47,7 @@
 # include "cvOneDDenseMatrix.h"
 # include "cvOneDMaterial.h"
 # include "cvOneDFiniteElement.h"
-# include "ComMod.h"
+# include "cpl1DType.h"
 
 
 // Static Declarations...
