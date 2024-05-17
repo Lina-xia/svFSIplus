@@ -170,7 +170,7 @@ void Couple1D(ComMod& com_mod, const CmMod& cm_mod)
             #endif
 
              //固定只有一个核进行写入文件操作，在最后一个时间步
-            if (Fa.nV.size() != 0 && com_mod.cTS == cpl1DType::maxStep){ 
+            if (Fa.nV.size() != 0 && com_mod.cTS == cvOneDOptions::maxStep){ 
               // Some Post Processing,一维
               if(cvOneDGlobal::outputType == OutputTypeScope::OUTPUT_TEXT){
                 cpl1DType::postprocess_Text();

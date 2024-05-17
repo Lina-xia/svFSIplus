@@ -267,9 +267,6 @@ int cvOneDModelManager::SolveModel(double dt, long stepSize,
   cpl1DType::SetModelPtr(cvOneDGlobal::gModelList[cvOneDGlobal::currentModel]);
 
   // We need to get these from the solver
-  cpl1DType::SetDeltaTime(dt);
-  cpl1DType::SetStepSize(stepSize);
-  cpl1DType::SetMaxStep(maxStep);
   cpl1DType::SetQuadPoints(quadPoints);
   cpl1DType::SetInletBCType(boundT);
   cpl1DType::DefineInletFlow(times, values, len);
@@ -308,9 +305,6 @@ int cvOneDModelManager::SolveModel(double dt, long stepSize,
   cpl1DType::SetModelPtr(cvOneDGlobal::gModelList[cvOneDGlobal::currentModel]);
 
   // We need to get these from the solver
-  cpl1DType::SetDeltaTime(dt);
-  cpl1DType::SetStepSize(stepSize);
-  cpl1DType::SetMaxStep(maxStep);
   cpl1DType::SetQuadPoints(quadPoints);
   cpl1DType::SetInletBCType(boundT);
   cpl1DType::SetConvergenceCriteria(conv);

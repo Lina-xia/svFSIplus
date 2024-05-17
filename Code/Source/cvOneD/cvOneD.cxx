@@ -277,8 +277,8 @@ int getDataTableIDFromStringKey(string key){
       inletCurveValue[loopB] = cvOneDGlobal::gDataTables[inletCurveIDX]->getValues(loopB);
     }
     // Solve Model
-    solveError = oned->SolveModel(opts->timeStep,
-                                  opts->stepSize,
+    solveError = oned->SolveModel(opts->dt,
+                                  opts->saveIncr,
                                   opts->maxStep,
                                   opts->quadPoints,
                                   inletCurveTotals,
@@ -298,8 +298,8 @@ int getDataTableIDFromStringKey(string key){
   }
   else{  //inletCurveName = "NONE"
     // Solve Model
-    solveError = oned->SolveModel(opts->timeStep,
-                                  opts->stepSize,
+    solveError = oned->SolveModel(opts->dt,
+                                  opts->saveIncr,
                                   opts->maxStep,
                                   opts->quadPoints,
                                   (char*)opts->boundaryType.c_str(),

@@ -48,10 +48,7 @@ vector<cvOneDSubdomain*>      cpl1DType::subdomainList;
 vector<cvOneDFEAJoint*>       cpl1DType::jointList;
 vector<int>                   cpl1DType::outletList;
 double                        cpl1DType::currentTime = 0;
-double                        cpl1DType::deltaTime = 0;
 double                        cpl1DType::Period = 0;
-long                          cpl1DType::stepSize = 0;
-long                          cpl1DType::maxStep = 0;
 long                          cpl1DType::quadPoints = 0;
 double*                       cpl1DType::flowRate = NULL;
 double*                       cpl1DType::flowTime = NULL;
@@ -500,7 +497,7 @@ void cpl1DType::postprocess_VTK_XML3D_ONEFILE(){
     for(int loopTime=0;loopTime<TotalSolution.Rows();loopTime++){
 
       // PRINT FLOW RATES
-      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Flowrate_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"1\" format=\"ascii\">\n",loopTime*stepSize,loopTime*deltaTime*stepSize);
+      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Flowrate_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"1\" format=\"ascii\">\n",loopTime*cvOneDOptions::saveIncr,loopTime*cvOneDOptions::dt*cvOneDOptions::saveIncr);
       for(int j=startOut+1;j<finishOut;j+=2){
         for(int k=0;k<circSubdiv;k++){
           fprintf(vtkFile,"%e ",(double)TotalSolution[loopTime][j]);
@@ -510,7 +507,7 @@ void cpl1DType::postprocess_VTK_XML3D_ONEFILE(){
       fprintf(vtkFile,"</DataArray>\n");
 
       // PRINT AREA
-      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Area_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"1\" format=\"ascii\">\n",loopTime*stepSize,loopTime*deltaTime*stepSize);
+      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Area_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"1\" format=\"ascii\">\n",loopTime*cvOneDOptions::saveIncr,loopTime*cvOneDOptions::dt*cvOneDOptions::saveIncr);
       for(int j=startOut;j<finishOut;j+=2){
         for(int k=0;k<circSubdiv;k++){
           fprintf(vtkFile,"%e ",(double)TotalSolution[loopTime][j]);
@@ -520,7 +517,7 @@ void cpl1DType::postprocess_VTK_XML3D_ONEFILE(){
       fprintf(vtkFile,"</DataArray>\n");
 
       // PRINT RADIAL DISPLACEMENTS AS VECTORS
-      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Disps_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"3\" format=\"ascii\">\n",loopTime*stepSize,loopTime*deltaTime*stepSize);
+      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Disps_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"3\" format=\"ascii\">\n",loopTime*cvOneDOptions::saveIncr,loopTime*cvOneDOptions::dt*cvOneDOptions::saveIncr);
       for(int j=startOut;j<finishOut;j+=2){
 
         // Evaluate Initial Area at current location
@@ -544,7 +541,7 @@ void cpl1DType::postprocess_VTK_XML3D_ONEFILE(){
       fprintf(vtkFile,"</DataArray>\n");
 
       // PRINT PRESSURE IN MMHG
-      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Pressure_mmHg_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"1\" format=\"ascii\">\n",loopTime*stepSize,loopTime*deltaTime*stepSize);
+      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Pressure_mmHg_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"1\" format=\"ascii\">\n",loopTime*cvOneDOptions::saveIncr,loopTime*cvOneDOptions::dt*cvOneDOptions::saveIncr);
       segLength = currSeg->getSegmentLength();
       curMat = subdomainList[loopSegment]->GetMaterial();
       int section = 0;
@@ -559,7 +556,7 @@ void cpl1DType::postprocess_VTK_XML3D_ONEFILE(){
       fprintf(vtkFile,"</DataArray>\n");
 
       // PRINT REYNOLDS NUMBER
-      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Reynolds_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"1\" format=\"ascii\">\n",loopTime*stepSize,loopTime*deltaTime*stepSize);
+      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Reynolds_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"1\" format=\"ascii\">\n",loopTime*cvOneDOptions::saveIncr,loopTime*cvOneDOptions::dt*cvOneDOptions::saveIncr);
       curMat = subdomainList[loopSegment]->GetMaterial();
       for(int j=startOut;j<finishOut;j+=2){
         // Get Flow
@@ -575,7 +572,7 @@ void cpl1DType::postprocess_VTK_XML3D_ONEFILE(){
       fprintf(vtkFile,"</DataArray>\n");
 
       // PRINT WSS
-      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"WSS_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"1\" format=\"ascii\">\n",loopTime*stepSize,loopTime*deltaTime*stepSize);
+      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"WSS_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"1\" format=\"ascii\">\n",loopTime*cvOneDOptions::saveIncr,loopTime*cvOneDOptions::dt*cvOneDOptions::saveIncr);
       curMat = subdomainList[loopSegment]->GetMaterial();
       for(int j=startOut;j<finishOut;j+=2){
         // Get Flow
@@ -954,7 +951,7 @@ void cpl1DType::postprocess_VTK_XML3D_MULTIPLEFILES(){
   double currTime = 0.0;
   for(int loopA=0;loopA<fileList.size();loopA++){
     fprintf(pvdFile,"<DataSet timestep=\"%e\" group=\"\" part=\"0\" file=\"%s\"/>",currTime,fileList[loopA].c_str());
-    currTime += deltaTime * stepSize;
+    currTime += cvOneDOptions::dt * cvOneDOptions::saveIncr;
   }
   fprintf(pvdFile,"</Collection>");
   fprintf(pvdFile,"</VTKFile>");
@@ -1201,10 +1198,8 @@ void cpl1DType::QuerryModelInformation(void)
     }
 }
 
-void cpl1DType::SetDeltaTime(double dt){deltaTime = dt;}
-void cpl1DType::SetStepSize(long size){stepSize = size;}
+
 void cpl1DType::SetInletBCType(BoundCondType bc){inletBCtype = bc;}
-void cpl1DType::SetMaxStep(long maxs){maxStep = maxs;}
 void cpl1DType::SetQuadPoints(long point){quadPoints = point;}
 void cpl1DType::SetConvergenceCriteria(double conv){convCriteria = conv;}
 
@@ -1331,8 +1326,8 @@ void cpl1DType::GenerateSolution(){
   }
 
   // Allocate the TotalSolution Array.
-  cout << "maxStep/stepSize: " << maxStep/stepSize << endl;
-  long numSteps = maxStep/stepSize;
+  cout << "maxStep/saveIncr: " << cvOneDOptions::maxStep/cvOneDOptions::saveIncr << endl;
+  long numSteps = cvOneDOptions::maxStep/cvOneDOptions::saveIncr;
   TotalSolution.SetSize(numSteps+1, currentSolution -> GetDimension());
   cout << "Total Solution is: " << numSteps << " x ";
   cout << currentSolution -> GetDimension() << endl;
@@ -1359,10 +1354,10 @@ void cpl1DType::GenerateSolution(){
   // long iter_total = 0;
 
   // // Time stepping
-  // for(long step = 1; step <= maxStep; step++){
+  // for(long step = 1; step <= cvOneDOptions::maxStep; step++){
   //    Nonlinear_iter(step, q, numberOfCycle, iter_total);
   // }
-  // cout << "\nAvgerage number of Newton-Raphson iterations per time step = "<<(double)iter_total / (double)maxStep<<"\n"<< endl;
+  // cout << "\nAvgerage number of Newton-Raphson iterations per time step = "<<(double)iter_total / (double)cvOneDOptions::maxStep<<"\n"<< endl;
 }
 
 void cpl1DType::Nonlinear_iter(int step){
@@ -1380,7 +1375,7 @@ void cpl1DType::Nonlinear_iter(int step){
 
   increment->Clear();
   for(int i = 0; i < numMath; i++){  //出现了静态变量
-    mathModels[i]->TimeUpdate(currentTime, deltaTime);
+    mathModels[i]->TimeUpdate(currentTime, cvOneDOptions::dt);
   }
 
   // Newton-Raphson Iterations...
@@ -1393,7 +1388,7 @@ void cpl1DType::Nonlinear_iter(int step){
   //   checkMass = 0;
   //   cout << "**** Time cycle " << numberOfCycle++ << endl;
   // }
-  currentTime += deltaTime;
+  currentTime += cvOneDOptions::dt;
 
   while(true){  //iter循环
     tstart_iter=clock();
@@ -1441,7 +1436,7 @@ void cpl1DType::Nonlinear_iter(int step){
     }
 
     // Check Newton-Raphson Convergence
-    if((currentTime != deltaTime || (currentTime == deltaTime && iter != 0)) && normf < convCriteria && norms < convCriteria){
+    if((currentTime != cvOneDOptions::dt || (currentTime == cvOneDOptions::dt && iter != 0)) && normf < convCriteria && norms < convCriteria){
       cout << "    iter: " << std::to_string(iter) << " ";
       cout << "normf: " << normf << " ";
       cout << "norms: " << norms << " ";
@@ -1566,7 +1561,7 @@ void cpl1DType::Nonlinear_iter(int step){
   cout << fixed <<"preFrom1DEachTime = " << preFrom1DEachTime << endl;
 
   // Save solution if needed
-  if(step % stepSize == 0){
+  if(step % cvOneDOptions::saveIncr == 0){
     sprintf( String2, "%ld", (unsigned long)step);
     title = String1 + String2;
     currentSolution->Rename(title.data());

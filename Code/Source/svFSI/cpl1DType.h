@@ -34,19 +34,14 @@ class cpl1DType
 
     std::string outputFileName;
 
-    static long stepSize;
-    static long maxStep;
     static long quadPoints;
     static double currentTime;
-    static double deltaTime;
     static BoundCondType inletBCtype;
     static int ASCII;
 
     // Solver Initialization
-    static void SetDeltaTime(double dt);
-    static void SetStepSize(long size);
     static void SetInletBCType(BoundCondType bc);
-    static void SetMaxStep(long maxs);
+    // static void SetMaxStep(long maxs);
     static void SetQuadPoints(long quadPoints_);
 	  static void SetConvergenceCriteria(double convCriteria);
 

@@ -30,8 +30,8 @@
  */
 
 #include "cvOneDOptions.h"
-double cvOneDOptions::timeStep = 0;
-long   cvOneDOptions::stepSize = 0;  //incre
+double cvOneDOptions::dt = 0;
+long   cvOneDOptions::saveIncr = 0;  //incre
 long   cvOneDOptions::maxStep = 0;
 
 // CONSTRUCTOR
@@ -111,8 +111,8 @@ void cvOneDOptions::printSegmentData(FILE* f){
 void cvOneDOptions::printSolverOptions(FILE* f){
   fprintf(f,"--- \n");
   fprintf(f,"PRINT SOLVER OPTION DATA\n");
-  fprintf(f,"TIME STEP: %f\n",timeStep);
-  fprintf(f,"STEP SIZE: %ld\n",stepSize);
+  fprintf(f,"TIME STEP SIZE: %f\n",dt);
+  fprintf(f,"Increment IN SAVING RESULTS: %ld\n",saveIncr);
   fprintf(f,"MAX STEP: %ld\n",maxStep);
   fprintf(f,"QUADRATURE POINTS: %ld\n",quadPoints);
   fprintf(f,"INLET DATA TABLE: %s\n",inletDataTableName.c_str());

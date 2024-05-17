@@ -239,8 +239,8 @@ void read_bc(Simulation* simulation, EquationParameters* eq_params, eqType& lEq,
     WriteHeader();
 
     // Read Model From File
-    cvOneDOptions::timeStep = com_mod.dt;
-    cvOneDOptions::stepSize = com_mod.saveIncr;
+    cvOneDOptions::dt = com_mod.dt;
+    cvOneDOptions::saveIncr = com_mod.saveIncr;
     cvOneDOptions::maxStep = com_mod.nTS;
 
     readModel(inputName, opts);
