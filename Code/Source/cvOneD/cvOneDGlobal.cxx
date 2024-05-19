@@ -31,12 +31,6 @@
 
 #include "cvOneDGlobal.h"
 
-// GLOBAL FLAGS
-bool cvOneDGlobal::isCreating = false;
-bool cvOneDGlobal::isSolving = false;
-int  cvOneDGlobal::outputType = 0; // Default Text Output
-int  cvOneDGlobal::vtkOutputType = 0; // Default Multiple Files
-int  cvOneDGlobal::CONSERVATION_FORM = 0;
 
 // DEBUG MODE
 bool cvOneDGlobal::debugMode = false;

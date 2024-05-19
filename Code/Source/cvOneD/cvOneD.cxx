@@ -265,53 +265,13 @@ int getDataTableIDFromStringKey(string key){
 
   // SOLVE MODEL
   cout << "Solving Model ... " << endl;
-  string inletCurveName = opts->inletDataTableName;
   int solveError = CV_OK;
-  if (inletCurveName != "NONE") {
-    int inletCurveIDX = getDataTableIDFromStringKey(inletCurveName);
-    int inletCurveTotals = cvOneDGlobal::gDataTables[inletCurveIDX]->getSize();
-    double* inletCurveTime = new double[inletCurveTotals];
-    double* inletCurveValue = new double[inletCurveTotals];
-    for(int loopB=0;loopB<inletCurveTotals;loopB++){
-      inletCurveTime[loopB] = cvOneDGlobal::gDataTables[inletCurveIDX]->getTime(loopB);
-      inletCurveValue[loopB] = cvOneDGlobal::gDataTables[inletCurveIDX]->getValues(loopB);
-    }
+   //inletCurveName = "NONE"
     // Solve Model
-    solveError = oned->SolveModel(opts->dt,
-                                  opts->saveIncr,
-                                  opts->maxStep,
-                                  opts->quadPoints,
-                                  inletCurveTotals,
-                                  (char*)opts->boundaryType.c_str(),
-                                  inletCurveValue,
-                                  inletCurveTime,
-                                  opts->convergenceTolerance,
-                                  // Formulation Type
-                                  opts->useIV,
-                                  // Stabilization
-                                  opts->useStab);
+    solveError = oned->SolveModel();
     if(solveError == CV_ERROR){
       throw cvException(string("ERROR: Error Solving Model\n").c_str());
     }
-    delete [] inletCurveTime;
-    delete [] inletCurveValue;
-  }
-  else{  //inletCurveName = "NONE"
-    // Solve Model
-    solveError = oned->SolveModel(opts->dt,
-                                  opts->saveIncr,
-                                  opts->maxStep,
-                                  opts->quadPoints,
-                                  (char*)opts->boundaryType.c_str(),
-                                  opts->convergenceTolerance,
-                                  // Formulation Type
-                                  opts->useIV,
-                                  // Stabilization
-                                  opts->useStab);
-    if(solveError == CV_ERROR){
-      throw cvException(string("ERROR: Error Solving Model\n").c_str());
-    }
-  }
 }
 
 // ======================
@@ -496,24 +456,20 @@ void readModelFile(string inputFile, cvOneDOptions* opts, cvStringVec includedFi
         if(opts->solverOptionDefined){
           throw cvException("ERROR: SOLVEROPTIONS already defined\n");
         }
-        if(tokenizedString.size() > 7){
+        if(tokenizedString.size() > 5){
           throw cvException(string("ERROR: Too many parameters for SOLVEROPTIONS token. Line " + to_string(lineCount) + "\n").c_str());
-        }else if(tokenizedString.size() < 7){
+        }else if(tokenizedString.size() < 5){
           throw cvException(string("ERROR: Not enough parameters for SOLVEROPTIONS token. Line " + to_string(lineCount) + "\n").c_str());
         }
         try{
           // long quadPoints,
           opts->quadPoints = atoi(tokenizedString[1].c_str());
-          // int CurveID,
-          opts->inletDataTableName = tokenizedString[2].c_str();
-          // char* boundType,
-          opts->boundaryType = tokenizedString[3];
           // double conv,
-          opts->convergenceTolerance = atof(tokenizedString[4].c_str());
+          opts->convergenceTolerance = atof(tokenizedString[2].c_str());
           // int useIV,
-          opts->useIV = atoi(tokenizedString[5].c_str());
+          opts->useIV = atoi(tokenizedString[3].c_str());
           // int usestab
-          opts->useStab = atoi(tokenizedString[6].c_str());
+          opts->useStab = atoi(tokenizedString[4].c_str());
         }catch(...){
           throw cvException(string("ERROR: Invalid SOLVEROPTIONS Format. Line " + to_string(lineCount) + "\n").c_str());
         }
@@ -526,17 +482,17 @@ void readModelFile(string inputFile, cvOneDOptions* opts, cvStringVec includedFi
         }
         // Output Type
         if(upper_string(tokenizedString[1]) == "TEXT"){
-          cvOneDGlobal::outputType = OutputTypeScope::OUTPUT_TEXT;
+          cvOneDOptions::outputType = OutputTypeScope::OUTPUT_TEXT;
         }else if(upper_string(tokenizedString[1]) == "VTK"){
-          cvOneDGlobal::outputType = OutputTypeScope::OUTPUT_VTK;
+          cvOneDOptions::outputType = OutputTypeScope::OUTPUT_VTK;
         }else if(upper_string(tokenizedString[1]) == "BOTH"){
-          cvOneDGlobal::outputType = OutputTypeScope::OUTPUT_BOTH;
+          cvOneDOptions::outputType = OutputTypeScope::OUTPUT_BOTH;
         }else{
           throw cvException("ERROR: Invalid OUTPUT Type.\n");
         }
         if(tokenizedString.size() > 2){
-          cvOneDGlobal::vtkOutputType = atoi(tokenizedString[2].c_str());
-          if(cvOneDGlobal::vtkOutputType > 1){
+          cvOneDOptions::vtkOutputType = atoi(tokenizedString[2].c_str());
+          if(cvOneDOptions::vtkOutputType > 1){
             throw cvException("ERROR: Invalid OUTPUT VTK Type.\n");
           }
         }

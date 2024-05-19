@@ -172,19 +172,19 @@ void Couple1D(ComMod& com_mod, const CmMod& cm_mod)
              //固定只有一个核进行写入文件操作，在最后一个时间步
             if (Fa.nV.size() != 0 && com_mod.cTS == cvOneDOptions::maxStep){ 
               // Some Post Processing,一维
-              if(cvOneDGlobal::outputType == OutputTypeScope::OUTPUT_TEXT){
+              if(cvOneDOptions::outputType == OutputTypeScope::OUTPUT_TEXT){
                 cpl1DType::postprocess_Text();
-              }else if(cvOneDGlobal::outputType == OutputTypeScope::OUTPUT_VTK){
-                if(cvOneDGlobal::vtkOutputType == 0){
+              }else if(cvOneDOptions::outputType == OutputTypeScope::OUTPUT_VTK){
+                if(cvOneDOptions::vtkOutputType == 0){
                   // Export in multifile format
                   cpl1DType::postprocess_VTK_XML3D_MULTIPLEFILES();
                 }else{
                   // All results in a single VTK File
                   cpl1DType::postprocess_VTK_XML3D_ONEFILE();
                 }
-              }else if(cvOneDGlobal::outputType == OutputTypeScope::OUTPUT_BOTH){
+              }else if(cvOneDOptions::outputType == OutputTypeScope::OUTPUT_BOTH){
                 cpl1DType::postprocess_Text();
-                if(cvOneDGlobal::vtkOutputType == 0){
+                if(cvOneDOptions::vtkOutputType == 0){
                   // Export in multifile format
                   cpl1DType::postprocess_VTK_XML3D_MULTIPLEFILES();
                 }else{

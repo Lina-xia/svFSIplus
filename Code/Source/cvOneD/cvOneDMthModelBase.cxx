@@ -133,20 +133,7 @@ void cvOneDMthModelBase::SetBoundaryConditions(){
 
   // Set up Inlet Dirichlet boundary condition (the default is flow rate)
   GetNodalEquationNumbers( 0, eqNumbers, 0);
-  switch(cpl1DType::inletBCtype){
-    case BoundCondTypeScope::FLOW:
-    case BoundCondTypeScope::THREEDCOUPLING:
-      (*currSolution)[eqNumbers[1]] = CurrentInletFlow;  //GetFlowRate();
-      break;
-
-    case BoundCondTypeScope::PRESSURE_WAVE:
-      (*currSolution)[eqNumbers[0]] = CurrentInletPressure;  //sub->GetMaterial()->GetArea(GetFlowRate(),0);
-      break;
-
-    default:
-
-      break;
-  }
+  (*currSolution)[eqNumbers[1]] = CurrentInletFlow;  //GetFlowRate();
 
   for (vector<int>::iterator it=outletList.begin(); it!=outletList.end(); it++){
     GetNodalEquationNumbers(subdomainList[*it]->GetNumberOfNodes() - 1, eqNumbers, *it);
@@ -168,7 +155,7 @@ void cvOneDMthModelBase::SetBoundaryConditions(){
       (*currSolution)[eqNumbers[1]] = sub->GetBoundFlowRate();
       break;
     case BoundCondTypeScope::RESISTANCE:
-            if(cvOneDGlobal::CONSERVATION_FORM==0){
+            if(cvOneDOptions::useIV==0){
         currS = (*currSolution)[eqNumbers[0]];
           currP = sub->GetMaterial()->GetPressure(currS, sub->GetLength());
         resistance = sub->GetBoundResistance();
@@ -176,7 +163,7 @@ void cvOneDMthModelBase::SetBoundaryConditions(){
         }
       break;
     case BoundCondTypeScope::RESISTANCE_TIME:
-            if(cvOneDGlobal::CONSERVATION_FORM == 0){
+            if(cvOneDOptions::useIV == 0){
         currS = (*currSolution)[eqNumbers[0]];
           currP = sub->GetMaterial()->GetPressure(currS, sub->GetLength());
         resistance = sub->GetBoundResistance(currentTime);
@@ -197,13 +184,7 @@ double cvOneDMthModelBase::CheckMassBalance(){
 
   long eqNumbers[2];  // Two degress of freedom per node
   double inletFlow;
-
-  if(cpl1DType::inletBCtype == BoundCondTypeScope::FLOW || BoundCondTypeScope::THREEDCOUPLING){
-    inletFlow = CurrentInletFlow;
-  }else{
-   GetNodalEquationNumbers( 0, eqNumbers, 0);
-   inletFlow = (*currSolution)[eqNumbers[1]];
-  }
+  inletFlow = CurrentInletFlow;
 
   double outletFlow = 0;
   for (vector<int>::iterator it=outletList.begin(); it!=outletList.end(); it++){
@@ -231,17 +212,12 @@ void cvOneDMthModelBase::ApplyBoundaryConditions(){
   double rhsBC;//changed rhs to rhsBC to avoid confusion with other "rhs" IV 052003
 
   // Brooke's BC implementation
-  if(cvOneDGlobal::CONSERVATION_FORM == 0){
+  if(cvOneDOptions::useIV == 0){
     // Set up the inlet Dirichlet boundary condition (flow rate)
     // RHS corresponding to imposed Essential BC
     value = 0.0;
-    if(cpl1DType::inletBCtype == BoundCondTypeScope::FLOW || cpl1DType::inletBCtype == BoundCondTypeScope::THREEDCOUPLING){
-      GetNodalEquationNumbers(0, eqNumbers, 0);
-      cvOneDGlobal::solver->SetSolution(eqNumbers[1], value);
-    }else if (cpl1DType::inletBCtype == BoundCondTypeScope::PRESSURE_WAVE){
-      GetNodalEquationNumbers(0, eqNumbers, 0);
-      cvOneDGlobal::solver->SetSolution(eqNumbers[0], value);
-    }
+    GetNodalEquationNumbers(0, eqNumbers, 0);
+    cvOneDGlobal::solver->SetSolution(eqNumbers[1], value);
 
     // Set up the correct outlet boundary condition
     cvOneDSubdomain* sub;
@@ -312,20 +288,14 @@ void cvOneDMthModelBase::ApplyBoundaryConditions(){
     //IV BC implementation, to specialize Inlet&Outlet fluxes
     //+ treat Dirichlet BC for pressure and flow rate BC
     //IV 03-20-03
-    if(cvOneDGlobal::CONSERVATION_FORM == 1){
+    if(cvOneDOptions::useIV == 1){
 
       // set up the inlet Dirichlet boundary condition (flow rate)
       // for these BC the Inlet term doesn't have to be specialized
       // so same treatment as regular Essential BC like in Brooke's
       value = 0.0;  // RHS corresponding to imposed Essential BC
-      if(cpl1DType::inletBCtype == BoundCondTypeScope::FLOW || cpl1DType::inletBCtype == BoundCondTypeScope::THREEDCOUPLING){
         GetNodalEquationNumbers( 0, eqNumbers, 0);
         cvOneDGlobal::solver->SetSolution( eqNumbers[1], value);
-      }else if (cpl1DType::inletBCtype == BoundCondTypeScope::PRESSURE_WAVE){
-        GetNodalEquationNumbers( 0, eqNumbers, 0);
-        cvOneDGlobal::solver->SetSolution( eqNumbers[0], value);
-      }
-
 
       // Set up the correct outlet boundary condition
       cvOneDSubdomain* sub;

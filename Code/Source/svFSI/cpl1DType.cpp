@@ -49,12 +49,9 @@ vector<cvOneDFEAJoint*>       cpl1DType::jointList;
 vector<int>                   cpl1DType::outletList;
 double                        cpl1DType::currentTime = 0;
 double                        cpl1DType::Period = 0;
-long                          cpl1DType::quadPoints = 0;
 double*                       cpl1DType::flowRate = NULL;
 double*                       cpl1DType::flowTime = NULL;
 long                          cpl1DType::numFlowPts = 0;
-double                        cpl1DType::convCriteria = 0;
-BoundCondType                 cpl1DType::inletBCtype;
 int                           cpl1DType::ASCII = 1;
 
 // SET MODE PTR
@@ -1034,13 +1031,7 @@ void cpl1DType::DefineMthModels(){
   cout << "Subdomain No. "<<subdomainList.size() << endl;
   cout << "Joint No. "<< jointList.size() << endl;
   cout << "Outlet No. "<< outletList.size() << endl;
-  cvOneDMthSegmentModel* segM = new cvOneDMthSegmentModel(subdomainList, jointList, outletList, quadPoints);
-  
-  if (inletBCtype != BoundCondTypeScope::THREEDCOUPLING){
-    // specify inlet flow rate boundary condition with time
-    segM->SetInflowRate(flowTime, flowRate, numFlowPts, flowTime[numFlowPts-1]);
-    Period = flowTime[numFlowPts-1];
-  }
+  cvOneDMthSegmentModel* segM = new cvOneDMthSegmentModel(subdomainList, jointList, outletList, cvOneDOptions::quadPoints);
 
   cvOneDMthBranchModel* branchM = new cvOneDMthBranchModel(subdomainList, jointList, outletList);
   AddOneModel(segM);
@@ -1198,11 +1189,6 @@ void cpl1DType::QuerryModelInformation(void)
     }
 }
 
-
-void cpl1DType::SetInletBCType(BoundCondType bc){inletBCtype = bc;}
-void cpl1DType::SetQuadPoints(long point){quadPoints = point;}
-void cpl1DType::SetConvergenceCriteria(double conv){convCriteria = conv;}
-
 void cpl1DType::CreateGlobalArrays(void){
     assert( wasSet == false);
     long neq = mathModels[0]->GetTotalNumberOfEquations();
@@ -1319,7 +1305,7 @@ void cpl1DType::CalcInitProps(long ID){
 void cpl1DType::GenerateSolution(){
 
   // Print the formulation used
-  if(cvOneDGlobal::CONSERVATION_FORM){
+  if(cvOneDOptions::useIV){
     cout << "Using Conservative Form ..." << endl;
   }else{
     cout << "Using Advective Form ..." << endl;
@@ -1436,7 +1422,7 @@ void cpl1DType::Nonlinear_iter(int step){
     }
 
     // Check Newton-Raphson Convergence
-    if((currentTime != cvOneDOptions::dt || (currentTime == cvOneDOptions::dt && iter != 0)) && normf < convCriteria && norms < convCriteria){
+    if((currentTime != cvOneDOptions::dt || (currentTime == cvOneDOptions::dt && iter != 0)) && normf < cvOneDOptions::convergenceTolerance && norms < cvOneDOptions::convergenceTolerance){
       cout << "    iter: " << std::to_string(iter) << " ";
       cout << "normf: " << normf << " ";
       cout << "norms: " << norms << " ";
@@ -1505,7 +1491,7 @@ void cpl1DType::Nonlinear_iter(int step){
       currentSolution->CheckPositive(0,2,currentSolution->GetDimension());
     }
 
-    if (iter == 0 && cpl1DType::inletBCtype == BoundCondTypeScope::THREEDCOUPLING){
+    if (iter == 0){
           cout << fixed <<"    cpl1DType.flowEachTime = " << flowEachTime << endl;
     }
 
@@ -1520,23 +1506,7 @@ void cpl1DType::Nonlinear_iter(int step){
     cvOneDSubdomain* sub;
     sub = subdomainList[0];
     if (iter == 0){
-      switch(cpl1DType::inletBCtype){
-        case BoundCondTypeScope::FLOW:
-          cvOneDMthModelBase::CurrentInletFlow = mathModels[0]-> GetFlowRate();
-          break;
-
-        case BoundCondTypeScope::PRESSURE_WAVE:
-          cvOneDMthModelBase::CurrentInletPressure = sub->GetMaterial()->GetArea(mathModels[0]->GetFlowRate(),0);
-          break;
-
-        case BoundCondTypeScope::THREEDCOUPLING:  //一定会改动
           cvOneDMthModelBase::CurrentInletFlow = flowEachTime;
-          break;
-
-        default:
-
-          break;
-      }
     }
     
     mathModels[0]->SetBoundaryConditions();

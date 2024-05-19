@@ -25,25 +25,16 @@ class cpl1DType
     // Global Solution Loop
     int q = 1;
 
-    static double dt;  //comMod.dt
-    static double saveIncr;  //Number of steps between saving results, comMod.saveIncr
-    static double nTS;   //Number of timesteps, comMod.nTS
+    // static double dt;  //comMod.dt
+    // static double saveIncr;  //Number of steps between saving results, comMod.saveIncr
+    // static double nTS;   //Number of timesteps, comMod.nTS
     
     // couple1D
     cvOneDOptions opts;
-
     std::string outputFileName;
 
-    static long quadPoints;
     static double currentTime;
-    static BoundCondType inletBCtype;
     static int ASCII;
-
-    // Solver Initialization
-    static void SetInletBCType(BoundCondType bc);
-    // static void SetMaxStep(long maxs);
-    static void SetQuadPoints(long quadPoints_);
-	  static void SetConvergenceCriteria(double convCriteria);
 
     // Set the Model Pointer
     static void SetModelPtr(cvOneDModel *mdl);
@@ -111,7 +102,6 @@ class cpl1DType
     static double *flowRate;
     static double *flowTime;
 	  static double Period;
-	  static double convCriteria;
 
 };
 

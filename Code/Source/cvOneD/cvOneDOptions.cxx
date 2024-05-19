@@ -30,9 +30,16 @@
  */
 
 #include "cvOneDOptions.h"
+
 double cvOneDOptions::dt = 0;
 long   cvOneDOptions::saveIncr = 0;  //incre
 long   cvOneDOptions::maxStep = 0;
+long   cvOneDOptions::quadPoints = 2;
+double cvOneDOptions::convergenceTolerance = 1.0e-8;
+int    cvOneDOptions::useIV = 1;
+int    cvOneDOptions::useStab = 1;
+int    cvOneDOptions::outputType = 0; // Default Text Output
+int    cvOneDOptions::vtkOutputType = 0; // Default Multiple Files
 
 // CONSTRUCTOR
 cvOneDOptions::cvOneDOptions(){
@@ -115,8 +122,6 @@ void cvOneDOptions::printSolverOptions(FILE* f){
   fprintf(f,"Increment IN SAVING RESULTS: %ld\n",saveIncr);
   fprintf(f,"MAX STEP: %ld\n",maxStep);
   fprintf(f,"QUADRATURE POINTS: %ld\n",quadPoints);
-  fprintf(f,"INLET DATA TABLE: %s\n",inletDataTableName.c_str());
-  fprintf(f,"BOUNDARY TYPE: %s\n",boundaryType.c_str());
   fprintf(f,"CONVERGENCE TOLERANCE: %f\n",convergenceTolerance);
   fprintf(f,"USE IV: %d\n",useIV);
   fprintf(f,"USE STABILIZATION: %d\n",useStab);

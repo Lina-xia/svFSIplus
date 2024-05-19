@@ -46,13 +46,6 @@ class cvOneDGlobal{
   
   public:
 
-    // GLOBAL FLAGS
-    static bool isCreating;
-    static bool isSolving;
-    static int outputType;
-    static int vtkOutputType;
-    static int CONSERVATION_FORM;
-
     // DEBUG MODE
     static bool debugMode;
 

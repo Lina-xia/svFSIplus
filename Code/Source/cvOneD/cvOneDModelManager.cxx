@@ -34,7 +34,6 @@
 
 cvOneDModelManager::cvOneDModelManager(char *mdlName){
   // We're creating a model
-  cvOneDGlobal::isCreating = true;
   cvOneDModel* newModel = new cvOneDModel;
   newModel->setModelName(mdlName);
   cvOneDGlobal::currentModel = cvOneDGlobal::gModelList.size();
@@ -217,103 +216,17 @@ int cvOneDModelManager::CreateJoint(char * jointName,double x,double y,double z,
   return CV_OK;
 }
 
-// ===========
-// SOLVE MODEL
-// ===========
-int cvOneDModelManager::SolveModel(double dt, long stepSize,
-                                   long maxStep, long quadPoints,
-                                   int len, char* boundType, double* values,
-                                   double* times, double conv, int useIV, int usestab){
-
-  BoundCondTypeScope::BoundCondType boundT;
-
-  // set the creation flag to off.
-  cvOneDGlobal::isCreating = false;
-
-  // convert char string to boundary condition type
-  if(!strcmp( boundType, "NOBOUND")){
-    boundT = BoundCondTypeScope::NOBOUND;
-    cout << "Inlet Condition Type: NOBOUND" << endl;
-  }else if(!strcmp( boundType, "PRESSURE")){
-    boundT = BoundCondTypeScope::PRESSURE;
-    cout << "Inlet Condition Type: PRESSURE" << endl;
-  }else if(!strcmp( boundType, "PRESSURE_WAVE")){
-    boundT = BoundCondTypeScope::PRESSURE_WAVE;
-    cout << "Inlet Condition Type: PRESSURE_WAVE" << endl;
-  }else if(!strcmp( boundType, "FLOW")){
-    boundT = BoundCondTypeScope::FLOW;
-    cout << "Inlet Condition Type: FLOW" << endl;
-  }else if(!strcmp( boundType, "RESISTANCE")){
-    boundT = BoundCondTypeScope::RESISTANCE;
-    cout << "Inlet Condition Type: RESISTANCE" << endl;
-  }else if(!strcmp( boundType, "RESISTANCE_TIME")){
-    boundT = BoundCondTypeScope::RESISTANCE_TIME;
-    cout << "Inlet Condition Type: RESISTANCE_TIME" << endl;
-  }else if(!strcmp( boundType, "RCR")){
-    boundT = BoundCondTypeScope::RCR;
-    cout << "Inlet Condition Type: RCR" << endl;
-  }else if(!strcmp( boundType, "CORONARY")){
-    boundT = BoundCondTypeScope::CORONARY;
-    cout << "Inlet Condition Type: CORONARY" << endl;
-  }else{
-    return CV_ERROR;
-  }
-
-  // Set Solver Options
-  cvOneDMthSegmentModel::STABILIZATION = usestab; // 1=stabilization, 0=none
-  cvOneDGlobal::CONSERVATION_FORM = useIV;
-  cpl1DType::ASCII = 1;
-
-  cpl1DType::SetModelPtr(cvOneDGlobal::gModelList[cvOneDGlobal::currentModel]);
-
-  // We need to get these from the solver
-  cpl1DType::SetQuadPoints(quadPoints);
-  cpl1DType::SetInletBCType(boundT);
-  cpl1DType::DefineInletFlow(times, values, len);
-  cpl1DType::SetConvergenceCriteria(conv);
-
-  cvOneDGlobal::isSolving = true;
-
-  cpl1DType::Solve();
-
-  cvOneDGlobal::isSolving = false;
-
-  return CV_OK;
-}
-
 
 // ===================================
 // THREEDCOUPLING BC SOLVE MODEL， Xia
 // ===================================
-int cvOneDModelManager::SolveModel(double dt, long stepSize,
-                                   long maxStep, long quadPoints,
-                                   char *boundType, double conv, int useIV, int usestab){
-  BoundCondTypeScope::BoundCondType boundT;
-
-  // set the creation flag to off.
-  cvOneDGlobal::isCreating = false;
-
-  // convert char string to boundary condition type
-  boundT = BoundCondTypeScope::THREEDCOUPLING;
-  cout << "Inlet Condition Type: THREEDCOUPLING" << endl;
+int cvOneDModelManager::SolveModel(){
 
   // Set Solver Options
-  cvOneDMthSegmentModel::STABILIZATION = usestab; // 1=stabilization, 0=none
-  cvOneDGlobal::CONSERVATION_FORM = useIV;
   cpl1DType::ASCII = 1;
-
   cpl1DType::SetModelPtr(cvOneDGlobal::gModelList[cvOneDGlobal::currentModel]);
 
-  // We need to get these from the solver
-  cpl1DType::SetQuadPoints(quadPoints);
-  cpl1DType::SetInletBCType(boundT);
-  cpl1DType::SetConvergenceCriteria(conv);
-
-  cvOneDGlobal::isSolving = true;
-
   cpl1DType::Solve();
-
-  cvOneDGlobal::isSolving = false;
 
   return CV_OK;
 }

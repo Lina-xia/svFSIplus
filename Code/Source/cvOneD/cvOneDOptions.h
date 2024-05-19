@@ -107,17 +107,17 @@ class cvOneDOptions{
     cvStringVec segmentBoundType;
     cvStringVec segmentDataTableName;
 
-    // SOLVER OPTIONS,读取三维的
+    // SOLVER OPTIONS，所有outlet共享
+    //读取三维的
     static double dt;  //dt
     static long   saveIncr;  //incre
     static long   maxStep;
-    long   quadPoints;
-    string inletDataTableName;
-    string boundaryType;
-    double convergenceTolerance;
-    int    useIV;
-    int    useStab;
-    string outputType;
+    static long   quadPoints;
+    static double convergenceTolerance;
+    static int    useIV;
+    static int    useStab;
+    static int    outputType;  //0表示TEXT，1表示VTP
+    static int    vtkOutputType;
     bool solverOptionDefined;
 
     // PRINTING

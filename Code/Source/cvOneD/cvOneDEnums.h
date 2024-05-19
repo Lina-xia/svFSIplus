@@ -109,7 +109,6 @@ struct BoundCondTypeScope{
     PRESSURE_WAVE   = 5, // pressure wave in time
     RCR             = 6, // RCR or Windkessel model, without assuming periodicity
     CORONARY        = 9, // Coronary BC, Jongmin Seo & Hyunjin Kim
-    THREEDCOUPLING  =10, //couplied with threeD model. The 3D model inputs one flow per time step. Xia
     NOBOUND 
   };
 };

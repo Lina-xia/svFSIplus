@@ -32,15 +32,15 @@
 //
 //  MthSegmentModel.cxx
 //
+# include <math.h>
 
 # include "cvOneDMthSegmentModel.h"
 # include "cvOneDGlobal.h"
-#include <math.h>
+# include "cvOneDOptions.h"
+
 // stabilization parameter blows up if you have a very small or zero
 // kinematic viscosity
 #define SMALL_KINEMATIC_VISCOSITY 0.0001
-
-int cvOneDMthSegmentModel::STABILIZATION;
 
 cvOneDMthSegmentModel::cvOneDMthSegmentModel(const vector<cvOneDSubdomain*>& subdList,
                                              const vector<cvOneDFEAJoint*>& jtList,
@@ -375,7 +375,7 @@ void cvOneDMthSegmentModel::FormElement(long element,
 		double IntegralpS = material->GetIntegralpS( U[0], z); //0.0;
 		double IntegralpD2S = 0;
 
-		if(cvOneDGlobal::CONSERVATION_FORM==1) {
+		if(cvOneDOptions::useIV==1) {
 			IntegralpD2S = material->GetIntegralpD2S( U[0], z); //0.0;
 		}
 
@@ -425,7 +425,7 @@ void cvOneDMthSegmentModel::FormElement(long element,
 		double modA[4];
 		double modC[4];
 
-		if(STABILIZATION==1){
+		if(cvOneDOptions::useStab==1){
 			GetModulus(A, modA);
 			if(kinViscosity < SMALL_KINEMATIC_VISCOSITY){
 				modC[0] = 0;
@@ -450,7 +450,7 @@ void cvOneDMthSegmentModel::FormElement(long element,
 			tau[1] = -tau[1]/det;
 			tau[2] = -tau[2]/det;
 			tau[3] =  temp/det;
-		}// end STABILIZATION
+		}// end cvOneDOptions::useStab
 
 		for( int a = 0; a < numberOfNodes; a++){
 			if (get_vec){
@@ -458,7 +458,7 @@ void cvOneDMthSegmentModel::FormElement(long element,
 				double rDG1=0.0;
 				double rDG2=0.0;
 
-				if(cvOneDGlobal::CONSERVATION_FORM){
+				if(cvOneDOptions::useIV){
 					// IV formulation 01-31-03
 					rDG1 = deltaTime*(DxShape[a]*F1+shape[a]*GF1)-shape[a]*(U[0]-Un[0]);
 					// GF2 contains NNN
@@ -475,7 +475,7 @@ void cvOneDMthSegmentModel::FormElement(long element,
 				double rGLS2 = 0.0;
 
 
-				if (STABILIZATION == 1){
+				if (cvOneDOptions::useStab == 1){
 					// GLS terms
 					// create an auxiliary matrix to handle some of the terms
 					double auxa[4];
@@ -517,7 +517,7 @@ void cvOneDMthSegmentModel::FormElement(long element,
 				for( int b = 0; b < numberOfNodes; b++){
 
 					// DG terms
-					if(cvOneDGlobal::CONSERVATION_FORM == 1){
+					if(cvOneDOptions::useIV == 1){
 						// IV's formulation 01-18-03
 						k11 = deltaTime*(shape[a]*CF11*shape[b])-shape[a]*shape[b];
 						k12 = deltaTime*(A12*shape[b]*DxShape[a]);
@@ -531,7 +531,7 @@ void cvOneDMthSegmentModel::FormElement(long element,
 						k22 = deltaTime*(shape[a]*A22*DxShape[b]+DxShape[a]*(K22)*DxShape[b]-shape[a]*C22*shape[b]) + shape[a]*shape[b];
 					}
 
-					if(STABILIZATION == 1){
+					if(cvOneDOptions::useStab == 1){
 						// GLS terms
 						// Create an auxiliary matrix to handle some of the terms
 						double auxa[4];
@@ -577,7 +577,7 @@ void cvOneDMthSegmentModel::FormElement(long element,
 			}
 		}
 
-		if(cvOneDGlobal::CONSERVATION_FORM){
+		if(cvOneDOptions::useIV){
 
 			//Inlet flux term (at z=z_inlet) which is the linearized F-KU IV 01-28-03
 			if (element == 0){
@@ -635,7 +635,7 @@ void cvOneDMthSegmentModel::FormElement(long element,
 	}
 
 	if (get_vec){
-		if(cvOneDGlobal::CONSERVATION_FORM){
+		if(cvOneDOptions::useIV){
 			//Inlet flux term (at z=z_inlet) which is the linearized F-KU
 			if(element == 0){
 				long node = 0;

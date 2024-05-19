@@ -60,8 +60,6 @@ class cvOneDMthSegmentModel : public cvOneDMthModelBase{
     void FormNewton(cvOneDFEAMatrix* lhsMatrix, cvOneDFEAVector* rhsVector);
     void SetEquationNumbers( long element, cvOneDDenseMatrix* elementMatrix, int ith);
     long GetUpmostEqnNumber(long ele, long ith) { return -2;}
-    // 1=Brooke's one, 0=none IV 04-28-03
-    static int STABILIZATION;
 
   private:
 
