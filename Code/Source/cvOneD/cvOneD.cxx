@@ -68,8 +68,9 @@ int getDataTableIDFromStringKey(string key){
 // ===============================
 // CREATE MODEL AND RUN SIMULATION
 // ===============================
-  void createAndRunModel(cvOneDOptions* opts){
+  void createAndRunModel(cpl1DType& cpl1D){
 
+  cvOneDOptions* opts = &cpl1D.opts;
   // MESSAGE
   cout << endl;
   cout << "Creating and Running Model ..." << endl;
@@ -262,8 +263,8 @@ int getDataTableIDFromStringKey(string key){
   }
 
   cpl1DType::ASCII = 1;
-  cpl1DType::SetModelPtr(cvOneDGlobal::gModelList[cvOneDGlobal::currentModel]);
-  cpl1DType::prepro();
+  cpl1D.model = cvOneDGlobal::gModelList[cvOneDGlobal::currentModel];
+  cpl1D.prepro();
 
   // SOLVE MODEL
   cout << "Solving Model ... " << endl;

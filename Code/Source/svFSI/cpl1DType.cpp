@@ -33,10 +33,10 @@
 
 # define baryeTommHg 0.0007500615613026439
 
+using namespace std;
+
 
 // Static Declarations...
-bool                          cpl1DType::wasSet = false;
-cvOneDModel*                  cpl1DType::model = NULL;
 cvOneDFEAVector*              cpl1DType::currentSolution = NULL;
 cvOneDFEAVector*              cpl1DType::previousSolution = NULL;
 cvOneDFEAVector*              cpl1DType::increment = NULL;
@@ -47,17 +47,12 @@ vector<cvOneDMthModelBase*>   cpl1DType::mathModels;
 vector<cvOneDSubdomain*>      cpl1DType::subdomainList;
 vector<cvOneDFEAJoint*>       cpl1DType::jointList;
 vector<int>                   cpl1DType::outletList;
-double                        cpl1DType::currentTime = 0;
-double                        cpl1DType::Period = 0;
-double*                       cpl1DType::flowRate = NULL;
-double*                       cpl1DType::flowTime = NULL;
-long                          cpl1DType::numFlowPts = 0;
 int                           cpl1DType::ASCII = 1;
 
-// SET MODE PTR
-void cpl1DType::SetModelPtr(cvOneDModel *mdl){
-  model = mdl;
-}
+// // SET MODE PTR
+// void cpl1DType::SetModelPtr(cvOneDModel *mdl){
+//   model = mdl;
+// }
 
 // ==================
 // WRITE TEXT RESULTS
@@ -66,6 +61,8 @@ void cpl1DType::postprocess_Text(){
   int j;
   int fileIter;
   int elCount = 0;
+  cout << model->getModelName() << endl;
+  cout << model->getModelID() <<endl;
   for(fileIter = 0; fileIter < model -> getNumberOfSegments(); fileIter++){
 
     cvOneDSegment *curSeg = model -> getSegment(fileIter);
@@ -1014,16 +1011,6 @@ void cpl1DType::prepro(void){
   // }
 }
 
-void cpl1DType::DefineInletFlow(double* time, double* flrt, int num){
-  flowTime = new double[num];
-  flowRate = new double[num];
-  for (int i=0;i<num;i++){
-    flowTime[i] = time[i];
-    flowRate[i] = flrt[i];
-  }
-  numFlowPts = num;
-  Period = flowTime[num-1];
-}
 
 void cpl1DType::DefineMthModels(){
   mathModels.clear();
@@ -1120,7 +1107,6 @@ void cpl1DType::QuerryModelInformation(void)
         subdomain->SetBoundCondition(BoundCondTypeScope::NOBOUND);
       }
       subdomain->SetupMaterial(matID);
-      subdomain->GetMaterial()->SetPeriod(Period);
 
       // Set up Minor Loss
       subdomain->SetMinorLossType(seg->GetMinorLossType());
