@@ -247,6 +247,10 @@ void read_bc(Simulation* simulation, EquationParameters* eq_params, eqType& lEq,
 
     // Model Checking
     opts->check();
+    
+    // // Print Input Data Echo
+    // string fileName("echo.out");
+    // opts->printToFile(fileName);
 
     //怎么判断接口三维一维是否一致？？
 

@@ -41,7 +41,7 @@ class cpl1DType
     static cvOneDModel* GetModelPtr(){return model;}
 
     // Solve the blood flow problem
-    static void Solve(void);
+    static void prepro(void);
 
     // Get the solution;
     static double GetSolution(int i, int j){return TotalSolution[i][j];}//IV 082103

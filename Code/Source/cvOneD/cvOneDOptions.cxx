@@ -201,7 +201,7 @@ void cvOneDOptions::printDataTables(FILE* f){
 
 void cvOneDOptions::printToFile(string fileName){
   FILE* f;
-  f = fopen(fileName.c_str(),"w");
+  f = fopen(fileName.c_str(),"a"); //以追加模式写入文件
 
   printf("\n");
   printf("Printing Model Echo ... \n");

@@ -216,21 +216,6 @@ int cvOneDModelManager::CreateJoint(char * jointName,double x,double y,double z,
   return CV_OK;
 }
 
-
-// ===================================
-// THREEDCOUPLING BC SOLVE MODEL， Xia
-// ===================================
-// int cvOneDModelManager::SolveModel(){
-
-//   // Set Solver Options
-//   cpl1DType::ASCII = 1;
-//   cpl1DType::SetModelPtr(cvOneDGlobal::gModelList[cvOneDGlobal::currentModel]);
-
-//   cpl1DType::Solve();
-
-//   return CV_OK;
-// }
-
 // ================
 // CREATE DATATABLE
 // ================

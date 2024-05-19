@@ -263,7 +263,7 @@ int getDataTableIDFromStringKey(string key){
 
   cpl1DType::ASCII = 1;
   cpl1DType::SetModelPtr(cvOneDGlobal::gModelList[cvOneDGlobal::currentModel]);
-  cpl1DType::Solve();
+  cpl1DType::prepro();
 
   // SOLVE MODEL
   cout << "Solving Model ... " << endl;
@@ -623,68 +623,3 @@ void readModel(string inputFile, cvOneDOptions* opts){
     readModelFile(inputFile,opts,includedFiles);
   }
 }
-
-// // ==============
-// // RUN ONEDSOLVER
-// // ==============
-// void runOneDSolver(string inputFile){
-
-//   // Create Options
-//   cvOneDOptions* opts = new cvOneDOptions();
-
-//   // Read Model From File
-//   readModel(inputFile,opts);
-
-//   // Model Checking
-//   opts->check();
-  
-//   // // Print Input Data Echo
-//   // string fileName("echo.out");
-//   // opts->printToFile(fileName);
-
-//   // Create Model and Run Simulation
-//   createAndRunModel(opts);
-
-//   // Delete Options
-//   delete opts;
-// }
-
-// void svOneDSolver(const std::string& inputFile, const std::string& outputFile){
-
-//   ofstream outFile(outputFile);
-//   // 重定向 std::cout 到文件流
-//   streambuf *coutbuf = cout.rdbuf(); // 保存原始的 std::cout buffer
-//   cout.rdbuf(outFile.rdbuf()); // 重定向 std::cout 到文件流
-
-//   // Write Program Header
-//   WriteHeader();
-
-//   try{
-
-//     // Run Simulation
-//     // string inputFile(argv[1]);
-//     runOneDSolver(inputFile);
-
-//   }catch(exception& e){
-//     // Print Exception Message
-//     cout << e.what() << endl;
-//     // Execution Terminated
-//     cout << "Terminated." << endl;
-//   }
-//   cout << "Completed!" << endl;
-  
-//   cout.rdbuf(coutbuf);
-//   outFile.close();
-// }
-
-// =============
-// MAIN FUNCTION
-// =============
-// int main(int argc, char** argv){
-//   string inputFile = "OneDtest.in";  //出口名字1.in
-//   string outputFile = "OneDtest.out";  //出口名字1.out
-//   couple3D1D mycouple(1); //在三维里面会声明couple里面元素的值，例子是一个出口
-//   svOneDSolver(inputFile, outputFile);   //每一个时间步读取 class couple3D1D 里面的值
-
-//   return 0;
-// }

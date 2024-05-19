@@ -959,7 +959,7 @@ void cpl1DType::postprocess_VTK_XML3D_MULTIPLEFILES(){
 // ====================
 // MAIN SOLUTION DRIVER
 // ====================
-void cpl1DType::Solve(void){
+void cpl1DType::prepro(void){
   char errStr[256];
   // First check to make sure we've set a model pointer
   // Prior to solution attempt.

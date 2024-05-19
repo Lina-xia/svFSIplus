@@ -75,9 +75,6 @@ class cvOneDModelManager{
                     int numInSegs,int numOutSegs,
                     int *InSegs,int *OutSegs);
 
-    // // THREEDCOUPLING BC SOLVE
-    // int SolveModel();
-
 };
 
 #endif // CVONEDMODELMANAGER_H
