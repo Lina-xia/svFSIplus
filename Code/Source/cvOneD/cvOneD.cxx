@@ -30,6 +30,7 @@
  */
 
 #include "cvOneD.h"
+#include "cpl1DType.h"
 
 using namespace std;
 
@@ -260,18 +261,13 @@ int getDataTableIDFromStringKey(string key){
     curveValue = NULL;
   }
 
-  double* vals;
-  int tot;
+  cpl1DType::ASCII = 1;
+  cpl1DType::SetModelPtr(cvOneDGlobal::gModelList[cvOneDGlobal::currentModel]);
+  cpl1DType::Solve();
 
   // SOLVE MODEL
   cout << "Solving Model ... " << endl;
-  int solveError = CV_OK;
-   //inletCurveName = "NONE"
-    // Solve Model
-    solveError = oned->SolveModel();
-    if(solveError == CV_ERROR){
-      throw cvException(string("ERROR: Error Solving Model\n").c_str());
-    }
+
 }
 
 // ======================
