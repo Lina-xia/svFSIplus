@@ -44,11 +44,5 @@ vector<cvOneDModel*> cvOneDGlobal::gModelList;
 // GLOBAL MATERIAL MANAGER OBJECT
 cvOneDMaterialManager* cvOneDGlobal::gMaterialManager = NULL;
 
-// GLOBAL Mth SEGMENT MODEL
-cvOneDMthSegmentModel* cvOneDGlobal::gMthSegmentModel = NULL;
-
 // GLOBAL VECTOR OF DATATABLES
 vector<cvOneDDataTable*> cvOneDGlobal::gDataTables;
-
-// GENERIC SOLVER INSTANCE
-cvOneDLinearSolver* cvOneDGlobal::solver = NULL;

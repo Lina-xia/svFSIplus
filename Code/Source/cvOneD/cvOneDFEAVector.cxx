@@ -42,6 +42,8 @@
 # include <cmath>
 # include "cvOneDFEAVector.h"
 
+# include "iostream"
+
 
 using namespace std;
 

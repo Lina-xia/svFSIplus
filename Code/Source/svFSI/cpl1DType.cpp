@@ -37,17 +37,18 @@ using namespace std;
 
 
 // Static Declarations...
-cvOneDFEAVector*              cpl1DType::currentSolution = NULL;
-cvOneDFEAVector*              cpl1DType::previousSolution = NULL;
-cvOneDFEAVector*              cpl1DType::increment = NULL;
-cvOneDFEAVector*              cpl1DType::rhs = NULL;
-cvOneDMatrix<double>          cpl1DType::TotalSolution;
-cvOneDFEAMatrix*              cpl1DType::lhs = NULL;
-vector<cvOneDMthModelBase*>   cpl1DType::mathModels;
-vector<cvOneDSubdomain*>      cpl1DType::subdomainList;
-vector<cvOneDFEAJoint*>       cpl1DType::jointList;
-vector<int>                   cpl1DType::outletList;
 int                           cpl1DType::ASCII = 1;
+// cvOneDFEAVector*              cpl1DType::currentSolution = NULL;
+// cvOneDFEAVector*              cpl1DType::previousSolution = NULL;
+// cvOneDFEAVector*              cpl1DType::increment = NULL;
+// cvOneDFEAVector*              cpl1DType::rhs = NULL;
+// cvOneDMatrix<double>          cpl1DType::TotalSolution;
+// cvOneDFEAMatrix*              cpl1DType::lhs = NULL;
+// vector<cvOneDMthModelBase*>   cpl1DType::mathModels;
+// vector<cvOneDSubdomain*>      cpl1DType::subdomainList;
+// vector<cvOneDFEAJoint*>       cpl1DType::jointList;
+// vector<int>                   cpl1DType::outletList;
+
 
 // // SET MODE PTR
 // void cpl1DType::SetModelPtr(cvOneDModel *mdl){
@@ -1225,18 +1226,24 @@ void cpl1DType::CreateGlobalArrays(void){
     // AND ASSOCIATED SOLVER
 # ifdef USE_SKYLINE
     lhs = new cvOneDSkylineMatrix(neq, maxa, "globalMatrix");
-    cvOneDGlobal::solver = new cvOneDSkylineLinearSolver();
+    // cvOneDGlobal::solver = new cvOneDSkylineLinearSolver();
+    mathModels[0]->solver = new cvOneDSkylineLinearSolver();
     cout << "USE_SKYLINE is definite." << endl;
 # endif
 
 # ifdef USE_SUPERLU
     lhs = new cvOneDSparseMatrix(neq, maxa, "globalMatrix");
-    cvOneDGlobal::solver = new cvOneDSparseLinearSolver();
+    // cvOneDGlobal::solver = new cvOneDSparseLinearSolver();
+    mathModels[0]->solver = new cvOneDSparseLinearSolver();
+
 # endif
 
 # ifdef USE_CSPARSE
     lhs = new cvOneDSparseMatrix(neq, maxa, "globalMatrix");
-    cvOneDGlobal::solver = new cvOneDSparseLinearSolver();
+    // cvOneDGlobal::solver = new cvOneDSparseLinearSolver();
+    mathModels[0]->solver = new cvOneDSparseLinearSolver();
+
+    
 # endif
 
     assert(lhs != 0);
@@ -1244,8 +1251,12 @@ void cpl1DType::CreateGlobalArrays(void){
     rhs = new cvOneDFEAVector( neq);
     assert(rhs != 0);
 
-    cvOneDGlobal::solver->SetLHS(lhs);
-    cvOneDGlobal::solver->SetRHS(rhs);
+    // cvOneDGlobal::solver->SetLHS(lhs);
+    // cvOneDGlobal::solver->SetRHS(rhs);
+    // 只改了cvOneDMthSegmentModel的
+    mathModels[0]->solver->lhsMatrix = lhs;
+    mathModels[0]->solver->rhsVector = rhs;
+
 
     previousSolution = new cvOneDFEAVector(neq, "previousSolution");
     assert(previousSolution != 0);
@@ -1355,11 +1366,6 @@ void cpl1DType::Nonlinear_iter(int step){
   double normf = 1.0;
   double norms = 1.0;
 
-  // When inletBCtype = THREEDCOUPLING, Period = 0. "Time cycle" is unknown, the following statement makes no sense. 不需要
-  // if( inletBCtype != BoundCondTypeScope::THREEDCOUPLING & (fmod(currentTime, Period) <5.0E-6 || -(fmod(currentTime, Period)-Period)<5.0E-6) ) {
-  //   checkMass = 0;
-  //   cout << "**** Time cycle " << numberOfCycle++ << endl;
-  // }
   currentTime += cvOneDOptions::dt;
 
   while(true){  //iter循环
@@ -1419,7 +1425,8 @@ void cpl1DType::Nonlinear_iter(int step){
     // Add increment
     increment->Clear();
 
-    cvOneDGlobal::solver->Solve(*increment);
+    // cvOneDGlobal::solver->Solve(*increment);
+    mathModels[0]->solver->Solve(*increment);
 
     currentSolution->Add(*increment);
 

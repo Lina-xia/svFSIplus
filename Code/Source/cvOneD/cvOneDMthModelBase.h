@@ -49,14 +49,17 @@
 # include "cvOneDFEAMatrix.h"
 # include "cvOneDSubdomain.h"
 # include "cvOneDFEAJoint.h"
+# include "cvOneDLinearSolver.h"
 
 class cvOneDMthModelBase{
 
   public:
 
     static int impedIncr;
-    static double CurrentInletFlow; //对于for InletBC == FLOW / THREEDCOUPLING
-    static double CurrentInletPressure; //对于for InletBC == PRESSURE_WAVE
+    static double CurrentInletFlow; //对于for InletBC == THREEDCOUPLING
+
+    // Solver: Skyline or Sparse
+    cvOneDLinearSolver *solver;
 
     cvOneDMthModelBase(const cvOneDModel* modl);
     cvOneDMthModelBase(const vector<cvOneDSubdomain*>& subdList, const vector<cvOneDFEAJoint*>& jtList,
@@ -74,11 +77,7 @@ class cvOneDMthModelBase{
     virtual void GetEquationNumbers( long element, long* eqNumbers, long ith);
     virtual long GetUpmostEqnNumber(long ele, long ith) =0;
     virtual void EquationInitialize(const cvOneDFEAVector* pSolution, cvOneDFEAVector* cSolution){prevSolution = pSolution; currSolution = cSolution;}
-    virtual void SetInflowRate(double *t, double *flow, int size, double cycleT);
     typeOfEquation GetType() const {return type;}
-    double GetCycleTime() const {return cycleTime;}
-
-    double GetFlowRate();
 
   protected:
 
@@ -105,9 +104,6 @@ class cvOneDMthModelBase{
     double previousTime;    // t_{n}
     double deltaTime;        // deltat
     double currentTime;    // t_{n+1}
-    double *flrt, *time;
-    double cycleTime;
-    int  nFlowPts; // added by bnsteel
 
 };
 

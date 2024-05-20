@@ -38,7 +38,6 @@
 # include "cvOneDMaterialManager.h"
 # include "cvOneDMthSegmentModel.h"
 # include "cvOneDDataTable.h"
-# include "cvOneDLinearSolver.h"
 
 using namespace std;
 
@@ -58,14 +57,11 @@ class cvOneDGlobal{
     // GLOBAL MATERIAL MANAGER OBJECT
     static cvOneDMaterialManager* gMaterialManager;
 
-    // GLOBAL Mth SEGMENT MODEL
-    static cvOneDMthSegmentModel* gMthSegmentModel;
-
     // GLOBAL VECTOR OF DATATABLES
     static vector<cvOneDDataTable*> gDataTables;
 
-    // Generic Solver instance
-    static cvOneDLinearSolver *solver;
+    // // Generic Solver instance
+    // static cvOneDLinearSolver *solver;
 
 };
 

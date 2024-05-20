@@ -53,7 +53,6 @@
 // Static Declarations...
 int     cvOneDMthModelBase::impedIncr;
 double  cvOneDMthModelBase::CurrentInletFlow = 0.0;
-double  cvOneDMthModelBase::CurrentInletPressure = 0.0;
 
 cvOneDMthModelBase::cvOneDMthModelBase(const cvOneDModel* modl){
 }
@@ -85,15 +84,10 @@ cvOneDMthModelBase::cvOneDMthModelBase(const vector<cvOneDSubdomain*>& subdList,
   for(i = 0; i < numberOfEquations; i++){
     equationNumbers[i] = i;
   }
-
-  flrt = NULL;
-  time = NULL;
 }
 
 cvOneDMthModelBase::~cvOneDMthModelBase(){
   delete [] equationNumbers;
-  if(flrt != NULL) delete [] flrt;
-  if(time != NULL) delete [] time;
 }
 
 void cvOneDMthModelBase::TimeUpdate(double pTime, double deltaT){
@@ -217,7 +211,7 @@ void cvOneDMthModelBase::ApplyBoundaryConditions(){
     // RHS corresponding to imposed Essential BC
     value = 0.0;
     GetNodalEquationNumbers(0, eqNumbers, 0);
-    cvOneDGlobal::solver->SetSolution(eqNumbers[1], value);
+    solver->SetSolution(eqNumbers[1], value);
 
     // Set up the correct outlet boundary condition
     cvOneDSubdomain* sub;
@@ -238,22 +232,22 @@ void cvOneDMthModelBase::ApplyBoundaryConditions(){
       switch(sub->GetBoundCondition()){
         case BoundCondTypeScope::PRESSURE:
         case BoundCondTypeScope::PRESSURE_WAVE:
-          cvOneDGlobal::solver->SetSolution( eqNumbers[0], value);
+          solver->SetSolution( eqNumbers[0], value);
           break;
         case BoundCondTypeScope::FLOW:
-          cvOneDGlobal::solver->SetSolution( eqNumbers[1], value);
+          solver->SetSolution( eqNumbers[1], value);
           break;
 
         case BoundCondTypeScope::RESISTANCE:
           currS = (*currSolution)[eqNumbers[0]];// dpds shouldn't be affected by p1
           k_m = sub->GetMaterial()->GetDpDS(currS, sub->GetLength())/ sub->GetBoundResistance();
-          cvOneDGlobal::solver->Minus1dof(eqNumbers[1], k_m);
+          solver->Minus1dof(eqNumbers[1], k_m);
           break;
 
         case BoundCondTypeScope::RESISTANCE_TIME:
           currS = (*currSolution)[eqNumbers[0]];
           k_m = sub->GetMaterial()->GetDpDS(currS, sub->GetLength())/ sub->GetBoundResistance(currentTime);
-          cvOneDGlobal::solver->Minus1dof(eqNumbers[1], k_m);
+          solver->Minus1dof(eqNumbers[1], k_m);
           break;
 
         //added by IV 051403
@@ -272,7 +266,7 @@ void cvOneDMthModelBase::ApplyBoundaryConditions(){
           lhs_QQ = 1;
           lhs_QS = DpDS*((1-exp(-alphaRCR*deltaTime))/(alphaRCR*Cap*Rp*Rp)-1/Rp);
           rhs_Q = -currQ + MemoC*exp(-alphaRCR*deltaTime) + currP/(Rp+Rd);
-          cvOneDGlobal::solver->DirectAppResistanceBC(eqNumbers[1], -lhs_QQ, lhs_QS, rhs_Q);//minus because of current impl of function "try"
+          solver->DirectAppResistanceBC(eqNumbers[1], -lhs_QQ, lhs_QS, rhs_Q);//minus because of current impl of function "try"
           break;
 
         default:
@@ -295,7 +289,7 @@ void cvOneDMthModelBase::ApplyBoundaryConditions(){
       // so same treatment as regular Essential BC like in Brooke's
       value = 0.0;  // RHS corresponding to imposed Essential BC
         GetNodalEquationNumbers( 0, eqNumbers, 0);
-        cvOneDGlobal::solver->SetSolution( eqNumbers[1], value);
+        solver->SetSolution( eqNumbers[1], value);
 
       // Set up the correct outlet boundary condition
       cvOneDSubdomain* sub;
@@ -360,10 +354,10 @@ void cvOneDMthModelBase::ApplyBoundaryConditions(){
           // so same treatment as regular Essential BC like in Brooke's
           case BoundCondTypeScope::PRESSURE:
           case BoundCondTypeScope::PRESSURE_WAVE:
-            cvOneDGlobal::solver->SetSolution( eqNumbers[0], value);
+            solver->SetSolution( eqNumbers[0], value);
             break;
           case BoundCondTypeScope::FLOW:
-            cvOneDGlobal::solver->SetSolution( eqNumbers[1], value);
+            solver->SetSolution( eqNumbers[1], value);
             break;
 
           case BoundCondTypeScope::RESISTANCE:
@@ -409,7 +403,7 @@ void cvOneDMthModelBase::ApplyBoundaryConditions(){
             //  cout<<(So_*(currS-So_)/Cp-IntegralpS)/IntegralpS*100<<" "<<endl;
             //cout<<((1.0+delta)*currP*currP/currS/pow(Resistance,2))/IntegralpS*density<<endl;
 
-            cvOneDGlobal::solver->AddFlux( eqNumbers[1],&(OutletLHS[0]),&(OutletRHS[0]));//specialize the Outlet flux term in LHS and RHS
+            solver->AddFlux( eqNumbers[1],&(OutletLHS[0]),&(OutletRHS[0]));//specialize the Outlet flux term in LHS and RHS
 
             // Essential way of treating resistance BC- as in Brooke's
             // k_m = sub->GetMaterial()->GetDpDS(currS, sub->GetLength())/ sub->GetBoundResistance();
@@ -430,7 +424,7 @@ void cvOneDMthModelBase::ApplyBoundaryConditions(){
             OutletRHS[1] = deltaTime*((1.0+delta)*currP*currP/currS/pow(Resistance,2)+IntegralpS/density);
             //-kinViscosity*dpdz/Resistance);
 
-            cvOneDGlobal::solver->AddFlux( eqNumbers[1],&(OutletLHS[0]),&(OutletRHS[0]));//specialize the Outlet flux term in LHS and RHS
+            solver->AddFlux( eqNumbers[1],&(OutletLHS[0]),&(OutletRHS[0]));//specialize the Outlet flux term in LHS and RHS
             break;
 
           case BoundCondTypeScope::RCR:
@@ -474,7 +468,7 @@ void cvOneDMthModelBase::ApplyBoundaryConditions(){
             OutletLHS[2] = -deltaTime*(DpDS*currS/density)+deltaTime*(1+delta)*(rhsQ*rhsQ)/(currS*currS)-2.0*(1+delta)*rhsQ/currS*DQDS*deltaTime;
             OutletLHS[3] = 0.0;
 /////////////////////////////////////////////////////////////////////////
-            cvOneDGlobal::solver->AddFlux( eqNumbers[1],&(OutletLHS[0]),&(OutletRHS[0]));//specialize the Outlet flux term in LHS and RHS
+            solver->AddFlux( eqNumbers[1],&(OutletLHS[0]),&(OutletRHS[0]));//specialize the Outlet flux term in LHS and RHS
 
             /* //essential implementation tried like resistance and resistance_other->not ok
             MemoC = sub->MemC(currP, prevP, deltaTime, currentTime);//need MemC to be public
@@ -541,7 +535,7 @@ void cvOneDMthModelBase::ApplyBoundaryConditions(){
 
             //viscosity term ignored;
 
-            cvOneDGlobal::solver->AddFlux( eqNumbers[1],&(OutletLHS[0]),&(OutletRHS[0]));//specialize the Outlet flux term in LHS and RHS
+            solver->AddFlux( eqNumbers[1],&(OutletLHS[0]),&(OutletRHS[0]));//specialize the Outlet flux term in LHS and RHS
             break;
 
 
@@ -555,48 +549,3 @@ void cvOneDMthModelBase::ApplyBoundaryConditions(){
       }//end loop over outlets
   }//end Irene's BC
 }//end ApplyBC
-
-
-void cvOneDMthModelBase::SetInflowRate(double *t, double *flow, int size, double cycleT){
-  int i;
-  time = new double[size];
-  flrt = new double[size];
-  for(i = 0; i < size; i++){
-  time[i] = t[i];
-  flrt[i] = flow[i];
-  }
-  cycleTime = cycleT;
-  nFlowPts = size; //added by bnsteel
-}
-
-double cvOneDMthModelBase::GetFlowRate(){
-
-  // Check if flow or time are defined
-  if(time == NULL || flrt == NULL){
-    cout << "ERROR: inflow information is not prescribed!"<< endl;
-    cout<<"Time and flow rate: " << time << ", " << flrt << endl;
-    exit(1);
-  }
-
-  // Flow rate is assumed to be periodic
-  double correctedTime = currentTime - static_cast<long>(currentTime / cycleTime) * cycleTime;
-  //printf("Corrected Time: %e\n",correctedTime);
-
-  int ptr = 0;
-  bool wasFound = false;
-  while( !wasFound){
-    if( correctedTime >= time[ptr] && correctedTime <= time[ptr+1])
-      wasFound = true;
-    else
-      ptr++;
-  }
-
-  // linear interpolation between values
-  double xi = (correctedTime - time[ptr]) / (time[ptr+1] - time[ptr]);
-  // Return
-  double result = flrt[ptr] + xi * (flrt[ptr+1] - flrt[ptr]);
-  // printf("Result Flow: %e\n",result);
-  return result;
-
-}
-

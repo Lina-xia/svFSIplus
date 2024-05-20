@@ -262,7 +262,6 @@ int getDataTableIDFromStringKey(string key){
     curveValue = NULL;
   }
 
-  cpl1DType::ASCII = 1;
   cpl1D.model = cvOneDGlobal::gModelList[cvOneDGlobal::currentModel];
   cpl1D.prepro();
 

@@ -20,13 +20,9 @@ class cpl1DType
 {
   public://静态变量表示所有的出口共享这些数据
 
-
     // static double dt;  //comMod.dt
     // static double saveIncr;  //Number of steps between saving results, comMod.saveIncr
     // static double nTS;   //Number of timesteps, comMod.nTS
-
-
-
 
     //静态变量，每个出口相同
     static int ASCII;
@@ -67,30 +63,27 @@ class cpl1DType
 
  private:
 
-    static vector<cvOneDSubdomain*> subdomainList;
-    static vector<cvOneDFEAJoint*> jointList;
-    static vector<int> outletList;
-    static cvOneDFEAVector *currentSolution;
-    static cvOneDFEAVector *previousSolution;
-    static cvOneDFEAVector *increment;
-    static cvOneDFEAVector *rhs;
-    static cvOneDFEAVector *relLength; //for pressure calculation
-    static cvOneDMatrix<double> TotalSolution;
-
-    // Generic matrix, can be skyline or sparse
-    static cvOneDFEAMatrix *lhs;
-
-    static vector<cvOneDMthModelBase*> mathModels;
+    vector<cvOneDSubdomain*> subdomainList;
+    vector<cvOneDFEAJoint*> jointList;
+    vector<int> outletList;
+    cvOneDFEAVector *currentSolution;
+    cvOneDFEAVector *previousSolution;
+    cvOneDFEAVector *increment;
+    cvOneDFEAVector *rhs;
+    cvOneDFEAVector *relLength; //for pressure calculation
+    cvOneDMatrix<double> TotalSolution;
+    cvOneDFEAMatrix *lhs;  // Generic matrix, can be skyline or sparse
+    vector<cvOneDMthModelBase*> mathModels;
 
     // Query Model, Allocate Memory, Set Initial Conditions
-    static void CreateGlobalArrays(void);
+    void CreateGlobalArrays(void);
 
     //initialize the solution, flow rate and area
-    static void CalcInitProps(long subdomainID);
+    void CalcInitProps(long subdomainID);
     
     //create MthSegmentModel and MthBranchModel if exists. Also specify inflow profile
-    static void DefineMthModels(void);
-    static void AddOneModel(cvOneDMthModelBase* model);
+    void DefineMthModels(void);
+    void AddOneModel(cvOneDMthModelBase* model);
 
 
 };

@@ -48,14 +48,14 @@ class cvOneDLinearSolver{
 
   public:
 
-    static cvOneDFEAMatrix* lhsMatrix;
-    static cvOneDFEAVector* rhsVector;
+    cvOneDFEAMatrix* lhsMatrix;
+    cvOneDFEAVector* rhsVector;
 
     cvOneDLinearSolver();
     virtual ~cvOneDLinearSolver();
 
-    virtual void SetLHS( cvOneDFEAMatrix* matrix) = 0;
-    virtual void SetRHS( cvOneDFEAVector* vector) = 0;
+    virtual void SetLHS( cvOneDFEAMatrix* matrix) = 0;  //有替代
+    virtual void SetRHS( cvOneDFEAVector* vector) = 0;  //有替代
   
     // matrix is overwritten with its LU decomposition
     // solution gets overwritten with the solution of 
@@ -73,7 +73,7 @@ class cvOneDLinearSolver{
     // Newton Raphson scheme is applied on equation Q = PR. Therefore the dense matrix 
     // is still 4x4. 
     virtual void DirectAppResistanceBC(long rbEqnNo, double resistance, double dpds, double rhs) = 0;
-	virtual void AddFlux(long rbEqnNo, double* OutletLHS11, double* OutletRHS1) = 0;
+	  virtual void AddFlux(long rbEqnNo, double* OutletLHS11, double* OutletRHS1) = 0;
 	
 };
 
