@@ -134,7 +134,6 @@ void Couple1D(ComMod& com_mod, const CmMod& cm_mod)
             std::cout.rdbuf(outFile.rdbuf()); // 重定向 std::cout 到文件流
 
             // std::cout << "com_mod.cTS = " << com_mod.cTS << std::endl;
-
             if (com_mod.cTS == 1){
               cpl1D.GenerateSolution();
             }

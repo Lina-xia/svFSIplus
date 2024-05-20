@@ -1328,19 +1328,6 @@ void cpl1DType::GenerateSolution(){
     mathModels[i]->EquationInitialize(previousSolution, currentSolution);
   }
 
-  // double cycleTime = mathModels[0]->GetCycleTime(); //= cpl1DType::Period
-
-  // // Global Solution Loop
-  // long q=1;
-  // // double checkMass = 0;
-  // int numberOfCycle = 1;
-  // long iter_total = 0;
-
-  // // Time stepping
-  // for(long step = 1; step <= cvOneDOptions::maxStep; step++){
-  //    Nonlinear_iter(step, q, numberOfCycle, iter_total);
-  // }
-  // cout << "\nAvgerage number of Newton-Raphson iterations per time step = "<<(double)iter_total / (double)cvOneDOptions::maxStep<<"\n"<< endl;
 }
 
 void cpl1DType::Nonlinear_iter(int step){

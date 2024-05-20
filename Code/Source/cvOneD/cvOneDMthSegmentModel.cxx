@@ -45,7 +45,7 @@
 cvOneDMthSegmentModel::cvOneDMthSegmentModel(const vector<cvOneDSubdomain*>& subdList,
                                              const vector<cvOneDFEAJoint*>& jtList,
                                              const vector<int>& outletList, long quadPoints_):
-                       cvOneDMthModelBase(subdList, jtList, outletList), quadrature_(quadPoints_){
+  cvOneDMthModelBase(subdList, jtList, outletList), quadrature_(quadPoints_){
   quadPoints = quadPoints_;
   weight = new double[quadPoints];
   xi = new double[quadPoints];
