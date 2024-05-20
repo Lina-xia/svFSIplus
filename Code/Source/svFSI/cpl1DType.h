@@ -18,13 +18,13 @@
 
 class cpl1DType
 {
-  public://静态变量表示所有的出口共享这些数据
+  public:
 
     // static double dt;  //comMod.dt
     // static double saveIncr;  //Number of steps between saving results, comMod.saveIncr
     // static double nTS;   //Number of timesteps, comMod.nTS
 
-    //静态变量，每个出口相同
+    //静态变量表示所有的出口共享这些数据
     static int ASCII;
 
     //非静态变量，具有出口特异性
@@ -41,10 +41,7 @@ class cpl1DType
 
     // Solve the blood flow problem
     void prepro(void);
-
 	  void QuerryModelInformation(void);
-        
-    //the main solve part
     void GenerateSolution(void);
     void Nonlinear_iter(int step);
 

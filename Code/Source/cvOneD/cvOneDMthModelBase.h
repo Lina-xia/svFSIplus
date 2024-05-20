@@ -55,8 +55,7 @@ class cvOneDMthModelBase{
 
   public:
 
-    static int impedIncr;
-    static double CurrentInletFlow; //对于for InletBC == THREEDCOUPLING
+    double CurrentInletFlow; //设置边界条件的时候使用
 
     // Solver: Skyline or Sparse
     cvOneDLinearSolver *solver;
@@ -71,7 +70,6 @@ class cvOneDMthModelBase{
     // forms minus the global residual vector and an approximation to the global consistent tangent
     virtual void FormNewton(cvOneDFEAMatrix* lhsMatrix, cvOneDFEAVector* rhsVector) = 0;
     virtual void SetBoundaryConditions();
-    virtual double CheckMassBalance();
     virtual void ApplyBoundaryConditions();
     virtual void GetNodalEquationNumbers( long node, long* eqNumbers, long ith);
     virtual void GetEquationNumbers( long element, long* eqNumbers, long ith);

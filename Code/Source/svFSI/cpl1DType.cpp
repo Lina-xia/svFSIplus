@@ -1309,8 +1309,8 @@ void cpl1DType::GenerateSolution(){
   }
 
   // Allocate the TotalSolution Array.
-  cout << "maxStep/saveIncr: " << cvOneDOptions::maxStep/cvOneDOptions::saveIncr << endl;
   long numSteps = cvOneDOptions::maxStep/cvOneDOptions::saveIncr;
+  cout << "maxStep/saveIncr: " << numSteps << endl;
   TotalSolution.SetSize(numSteps+1, currentSolution -> GetDimension());
   cout << "Total Solution is: " << numSteps << " x ";
   cout << currentSolution -> GetDimension() << endl;
@@ -1484,10 +1484,6 @@ void cpl1DType::Nonlinear_iter(int step){
       currentSolution->CheckPositive(0,2,currentSolution->GetDimension());
     }
 
-    if (iter == 0){
-          cout << fixed <<"    cpl1DType.flowEachTime = " << flowEachTime << endl;
-    }
-
     tend_iter=clock();
     cout << "    iter: " << std::to_string(iter) << " ";
     cout << "normf: " << normf << " ";
@@ -1499,7 +1495,9 @@ void cpl1DType::Nonlinear_iter(int step){
     cvOneDSubdomain* sub;
     sub = subdomainList[0];
     if (iter == 0){
-          cvOneDMthModelBase::CurrentInletFlow = flowEachTime;
+          // cvOneDMthModelBase::CurrentInletFlow = flowEachTime;
+          mathModels[0]->CurrentInletFlow = flowEachTime;
+          cout << fixed <<"    CurrentInletFlow = " << flowEachTime << endl;
     }
     
     mathModels[0]->SetBoundaryConditions();

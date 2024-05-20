@@ -50,9 +50,6 @@
 # include "cpl1DType.h"
 
 
-// Static Declarations...
-int     cvOneDMthModelBase::impedIncr;
-double  cvOneDMthModelBase::CurrentInletFlow = 0.0;
 
 cvOneDMthModelBase::cvOneDMthModelBase(const cvOneDModel* modl){
 }
@@ -94,7 +91,6 @@ void cvOneDMthModelBase::TimeUpdate(double pTime, double deltaT){
   previousTime = pTime;
   deltaTime = deltaT;
   currentTime = previousTime + deltaTime;
-  impedIncr = 1;
 }
 
 void cvOneDMthModelBase::GetNodalEquationNumbers(long locNode, long* eqNumbers,long ithSubdomain){
@@ -127,7 +123,7 @@ void cvOneDMthModelBase::SetBoundaryConditions(){
 
   // Set up Inlet Dirichlet boundary condition (the default is flow rate)
   GetNodalEquationNumbers( 0, eqNumbers, 0);
-  (*currSolution)[eqNumbers[1]] = CurrentInletFlow;  //GetFlowRate();
+  (*currSolution)[eqNumbers[1]] = CurrentInletFlow;
 
   for (vector<int>::iterator it=outletList.begin(); it!=outletList.end(); it++){
     GetNodalEquationNumbers(subdomainList[*it]->GetNumberOfNodes() - 1, eqNumbers, *it);
@@ -173,24 +169,6 @@ void cvOneDMthModelBase::SetBoundaryConditions(){
   }// end for loop
 }
 
-// Eval Mass Balance
-double cvOneDMthModelBase::CheckMassBalance(){
-
-  long eqNumbers[2];  // Two degress of freedom per node
-  double inletFlow;
-  inletFlow = CurrentInletFlow;
-
-  double outletFlow = 0;
-  for (vector<int>::iterator it=outletList.begin(); it!=outletList.end(); it++){
-    GetNodalEquationNumbers(subdomainList[*it]->GetNumberOfNodes() - 1, eqNumbers, *it);
-    outletFlow += (*currSolution)[eqNumbers[1]];
-  }
-  if(cvOneDGlobal::debugMode){
-    printf("(Debug) Inlet Flow: %e\n",inletFlow);
-    printf("(Debug) Outlet Flow: %e\n",outletFlow);
-  }
-  return (inletFlow-outletFlow);
-}
 
 void cvOneDMthModelBase::ApplyBoundaryConditions(){
   char propName[256];
