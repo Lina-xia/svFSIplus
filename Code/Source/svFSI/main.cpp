@@ -62,6 +62,7 @@
 #include <fstream>
 
 #include "cvOneDGlobal.h"
+#include "cvOneD.h"
 
 /// @brief Read in a solver XML file and all mesh and BC data.  
 //
@@ -70,10 +71,10 @@ void read_files(Simulation* simulation, const std::string& file_name)
   simulation->com_mod.timer.set_time();
 
   if (simulation->com_mod.cm.slv(simulation->cm_mod)) {
-    return;
+    return;  //如果非主程序,则立即返回
   }
 
-  read_files_ns::read_files(simulation, file_name);
+  read_files_ns::read_files(simulation, file_name);  //只有主程序进行方程和边界的读取
 
 /*
   try {
@@ -92,13 +93,10 @@ void Couple1D(ComMod& com_mod, const CmMod& cm_mod)
 {
   using namespace consts;
 
-  #define n_debug_Couple1D
+  #define debug_Couple1D
   #ifdef debug_Couple1D
   DebugMsg dmsg(__func__, com_mod.cm.idcm());
   #endif
-
-  DebugMsg dmsg(__func__, com_mod.cm.idcm());
-  dmsg.banner();
 
   for (int iEq = 0; iEq < com_mod.nEq; iEq++) {
     auto& eq = com_mod.eq[iEq];
@@ -110,42 +108,52 @@ void Couple1D(ComMod& com_mod, const CmMod& cm_mod)
         auto& Fa = com_mod.msh[iM].fa[iFa];
         auto& Yn = com_mod.Yn;
         auto& cm = com_mod.cm;
-        auto& cpl1D = bc.cpl1D;
         // dmsg << ">>> bc.iM: " << bc.iM ;
         // dmsg << ">>> bc.bType:" << bc.bType << endl;
 
-        if(utils::btest(bc.bType, enum_int(BoundaryConditionType::bType_cpl1D))){
-          //边界的计算是按照顺序来的
+        //边界的计算是按照顺序来的
+        if(utils::btest(bc.bType, enum_int(BoundaryConditionType::bType_cpl1D))){    
+          auto& cpl1D = bc.cpl1D;
           cpl1D.flowEachTime = all_fun::integ(com_mod, cm_mod, Fa, Yn, eq.s, eq.s + com_mod.nsd-1);
 
-            #ifdef debug_Couple1D
-              dmsg.banner();
-              dmsg << ">>> iPr:" << cpl1D.iPr;
-              dmsg << ">>> iBc: " << iBc; 
-              dmsg << ">>> name: " << Fa.name;
-              dmsg << ">>> Fa.nNo: " << Fa.nNo;
-              dmsg << ">>> flowEachTime: " << cpl1D.flowEachTime;  //每个时间步一更新
-            #endif
+          #ifdef debug_Couple1D
+            dmsg.banner();
+            // dmsg << ">>> iBc: " << iBc; 
+            dmsg << ">>> name: " << Fa.name;
+            dmsg << ">>> Fa.nNo: " << Fa.nNo;
+            // dmsg << ">>> flowEachTime: " << cpl1D.flowEachTime;  //每个时间步一更新
+          #endif
 
-            // 一维非线性迭代 STRAT
+          if (Fa.nNo != 0){  //在特定的核上读取文件
 
-            std::ofstream outFile(cpl1D.outputFileName, std::ios::app); //以追加模式写入
-            std::streambuf *coutbuf = std::cout.rdbuf(); // 保存原始的 std::cout buffer
-            std::cout.rdbuf(outFile.rdbuf()); // 重定向 std::cout 到文件流
-
-            // std::cout << "com_mod.cTS = " << com_mod.cTS << std::endl;
             if (com_mod.cTS == 1){
+              std::ofstream outFile(cpl1D.outputFileName);
+              std::streambuf *coutbuf = std::cout.rdbuf();
+              std::cout.rdbuf(outFile.rdbuf());
+
+              WriteHeader();
+              cvOneDOptions::dt = com_mod.dt;
+              cvOneDOptions::saveIncr = com_mod.saveIncr;
+              cvOneDOptions::maxStep = com_mod.nTS;
+              readModel(cpl1D.inputFileName, &cpl1D.opts);
+              cpl1D.opts.check();
+
+              //怎么判断接口三维一维是否一致？？
+              createAndRunModel(cpl1D);
               cpl1D.GenerateSolution();
             }
+            
+            std::ofstream outFile(cpl1D.outputFileName,std::ios::app);
+            std::streambuf *coutbuf = std::cout.rdbuf();
+            std::cout.rdbuf(outFile.rdbuf());
 
+            // 一维非线性迭代 STRAT
             cpl1D.Nonlinear_iter(com_mod.cTS);
+            //END
 
             std::cout.rdbuf(coutbuf);
             outFile.close();
 
-            //END
-
-            // cpl1D.preFrom1DEachTime = 50000;  //test
             #ifdef debug_Couple1D
             dmsg << ">>> preFrom1DEachTime: " << cpl1D.preFrom1DEachTime;
             #endif
@@ -168,8 +176,8 @@ void Couple1D(ComMod& com_mod, const CmMod& cm_mod)
             dmsg << ">>> h: " << bc.h;
             #endif
 
-             //固定只有一个核进行写入文件操作，在最后一个时间步
-            if (Fa.nV.size() != 0 && com_mod.cTS == cvOneDOptions::maxStep){ 
+            //在最后一个时间步
+            if (com_mod.cTS == cvOneDOptions::maxStep){ 
               // Some Post Processing,一维
               if(cvOneDOptions::outputType == OutputTypeScope::OUTPUT_TEXT){
                 cpl1D.postprocess_Text();
@@ -194,11 +202,14 @@ void Couple1D(ComMod& com_mod, const CmMod& cm_mod)
             }
           }
           
-          MPI_Barrier(MPI_COMM_WORLD);
-          
+            dmsg << "before MPI_Barrier" << endl;
+            MPI_Barrier(MPI_COMM_WORLD);
+            dmsg << "after MPI_Barrier" << endl;      
         }
       }
     }
+  }
+  
   }
 
 /// @brief Iterate the precomputed state-variables in time using linear interpolation to the current time step size
@@ -307,14 +318,11 @@ void iterate_solution(Simulation* simulation)
 
   std::cout << std::scientific << std::setprecision(16);
   
-  #define n_debug_iterate_solution
+  #define debug_iterate_solution
   #ifdef debug_iterate_solution
   DebugMsg dmsg(__func__, com_mod.cm.idcm());
   dmsg.banner();
   #endif
-
-  DebugMsg dmsg(__func__, com_mod.cm.idcm());
-  dmsg.banner();
 
   #ifdef debug_iterate_solution
   dmsg << "========== iterate_solution ==========" << std::endl;
@@ -384,9 +392,6 @@ void iterate_solution(Simulation* simulation)
     dmsg << "=============== Outer Loop ============== " << std::endl;
     dmsg << "========================================= " << std::endl;
     #endif
-    dmsg << "========================================= " << std::endl;
-    dmsg << "=============== Outer Loop ============== " << std::endl;
-    dmsg << "========================================= " << std::endl;
 
     // Adjusting the time step size once initialization stage is over
     //
@@ -460,15 +465,12 @@ void iterate_solution(Simulation* simulation)
     int iEqOld;
 
     while (true) { 
-      dmsg << "---------- Inner Loop " + std::to_string(inner_count) << " -----------" ;
       #ifdef debug_iterate_solution
       dmsg << "---------- Inner Loop " + std::to_string(inner_count) << " -----------" ;
       dmsg << "cEq: " << cEq;
       dmsg << "com_mod.eq[cEq].sym: " << com_mod.eq[cEq].sym;
       //simulation->com_mod.timer.set_time();
       #endif
-      //std::cout << "-------------------------------------" << std::endl;
-      //std::cout << "inner_count: " << inner_count << std::endl;
 
       auto istr = "_" + std::to_string(cTS) + "_" + std::to_string(inner_count);
       iEqOld = cEq;
@@ -709,7 +711,6 @@ void iterate_solution(Simulation* simulation)
       inner_count += 1;
     } // Inner loop
 
-    dmsg << "---------- End of inner loop----------------" << std::endl;
     #ifdef debug_iterate_solution
     dmsg << "---------- End of inner loop----------------" << std::endl; 
     #endif
@@ -859,10 +860,6 @@ void iterate_solution(Simulation* simulation)
   #ifdef debug_iterate_solution
   dmsg << "----------- End of outer loop ----------" << std::endl;
   #endif
-  dmsg << std::endl;
-  dmsg << "========================================= " << std::endl;
-  dmsg << "=========== End of Outer Loop =========== " << std::endl;
-  dmsg << "========================================= " << std::endl;
 
   //#ifdef debug_iterate_solution
   //dmsg << "=======  Simulation Finished   ========== " << std::endl;
@@ -906,7 +903,7 @@ int main(int argc, char *argv[])
   auto& cm = simulation->com_mod.cm;
   std::string file_name(argv[1]);
 
-  #define n_debug_main
+  #define debug_main
   #ifdef debug_main
   DebugMsg dmsg(__func__, cm.idcm());
   dmsg.banner();

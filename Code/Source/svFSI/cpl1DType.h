@@ -28,14 +28,16 @@ class cpl1DType
     static int ASCII;
 
     //非静态变量，具有出口特异性
+    std::string outputFileName;
+    std::string inputFileName;
+
     double flowEachTime = 0.0;
     double preFrom1DEachTime = 0.0;
     int q = 1;  // Global Solution Loop
-    cvOneDOptions opts;
-    std::string outputFileName;
     double currentTime;
     bool wasSet = false;
 
+    cvOneDOptions opts;
     // Pointer to the Model
     cvOneDModel *model;
 

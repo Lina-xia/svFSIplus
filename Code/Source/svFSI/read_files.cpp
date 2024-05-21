@@ -45,7 +45,6 @@
 #include "fsils_api.hpp"
 #include "fils_struct.hpp"
 
-#include "cvOneD.h"
 #include "cpl1DType.h"
 
 #include <fstream>
@@ -214,50 +213,10 @@ void read_bc(Simulation* simulation, EquationParameters* eq_params, eqType& lEq,
     lBc.bType = utils::ibset(lBc.bType, enum_int(BoundaryConditionType::bType_trac));
     lBc.bType = utils::ibset(lBc.bType, enum_int(BoundaryConditionType::bType_std));
 
-    //寻找name.in读取,并创建name.out
+    //读取name
     std::string FileName = simulation->com_mod.msh[lBc.iM].fa[lBc.iFa].name;
-    std::string inputName = FileName + std::string(".in");
-    std::string outputName = FileName + std::string(".out");
-
-    //一些别名
-    auto& com_mod = simulation->com_mod;
-    cvOneDOptions* opts = &lBc.cpl1D.opts;
-    
-    lBc.cpl1D.outputFileName = outputName;
-    // 这里还需要规定仅一个核执行,
-    // 多个耦合边界的时候,不同的核执行不同的一维运算并输出,可能会导致输出混乱,输出的重定向只输出到最后一个打开的文件
-    std::ofstream outFile(outputName);
-    std::streambuf *coutbuf = std::cout.rdbuf(); // 保存原始的 std::cout buffer
-    std::cout.rdbuf(outFile.rdbuf()); // 重定向 std::cout 到文件流
-
-    // 输出流只有主进程？
-    DebugMsg dmsg(__func__, simulation->com_mod.cm.idcm());
-    // int mpi_rank;
-    // MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-    // dmsg << "mpi_rank: " << mpi_rank;
-
-    WriteHeader();
-
-    // Read Model From File
-    cvOneDOptions::dt = com_mod.dt;
-    cvOneDOptions::saveIncr = com_mod.saveIncr;
-    cvOneDOptions::maxStep = com_mod.nTS;
-
-    readModel(inputName, opts);
-
-    // Model Checking
-    opts->check();
-
-    // // Print Input Data Echo
-    // string fileName("echo.out");
-    // opts->printToFile(fileName);
-
-    //怎么判断接口三维一维是否一致？？
-
-    createAndRunModel(lBc.cpl1D);
-
-    std::cout.rdbuf(coutbuf);
-    outFile.close();
+    lBc.cpl1D.inputFileName = FileName + std::string(".in");
+    lBc.cpl1D.outputFileName = FileName + std::string(".out");
 
   } else {
     throw std::runtime_error("[read_bc] Unknown boundary condition type '" + bc_type + "'.");
@@ -1648,7 +1607,7 @@ void read_files(Simulation* simulation, const std::string& file_name)
 
   auto& com_mod = simulation->get_com_mod();
 
-  #define n_debug_read_files
+  #define debug_read_files
   #ifdef debug_read_files
   DebugMsg dmsg(__func__, com_mod.cm.idcm());
   dmsg.banner();

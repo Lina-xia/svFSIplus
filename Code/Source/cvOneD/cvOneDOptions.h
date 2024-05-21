@@ -110,27 +110,15 @@ class cvOneDOptions{
     // SOLVER OPTIONS，所有outlet共享
     //读取三维的
     static double dt;  //dt
-    static long   saveIncr;  //incre
-    static long   maxStep;
-    static long   quadPoints;
+    static int   saveIncr;  //incre
+    static int   maxStep;
+    static int   quadPoints;
     static double convergenceTolerance;
     static int    useIV;
     static int    useStab;
     static int    outputType;  //0表示TEXT，1表示VTP
     static int    vtkOutputType;
     bool solverOptionDefined;
-
-    // PRINTING
-    void printToFile(string fileName);
-    void printModelName(FILE* f);
-    void printNodeData(FILE* f);
-    void printJointData(FILE* f);
-    void printSegmentData(FILE* f);
-    void printSolverOptions(FILE* f);
-    void printMaterialData(FILE* f);
-    void printJointInletData(FILE* f);
-    void printJointOutletData(FILE* f);
-    void printDataTables(FILE* f);
 
     // CHECKING
     void check();
