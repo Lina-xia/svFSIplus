@@ -715,8 +715,7 @@ void iterate_solution(Simulation* simulation)
     #ifdef debug_iterate_solution
     dmsg << "---------- End of inner loop----------------" << std::endl; 
     #endif
-     
-    Couple1D(com_mod, cm_mod);
+
 
     // IB treatment: interpolate flow data on IB mesh from background
     // fluid mesh for explicit coupling, update old solution for implicit
@@ -830,6 +829,8 @@ void iterate_solution(Simulation* simulation)
     } else {
       output::output_result(simulation, com_mod.timeP, 2, iEqOld);
     }
+
+    Couple1D(com_mod, cm_mod);
 
     // [NOTE] Not implemented.
     //
