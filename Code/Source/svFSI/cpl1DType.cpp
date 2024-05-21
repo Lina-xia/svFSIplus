@@ -47,8 +47,8 @@ void cpl1DType::postprocess_Text(){
   int j;
   int fileIter;
   int elCount = 0;
-  cout << model->getModelName() << endl;
-  cout << model->getModelID() <<endl;
+  // cout << model->getModelName() << endl;
+  // cout << model->getModelID() <<endl;
   for(fileIter = 0; fileIter < model -> getNumberOfSegments(); fileIter++){
 
     cvOneDSegment *curSeg = model -> getSegment(fileIter);
@@ -1332,7 +1332,7 @@ void cpl1DType::Nonlinear_iter(int step){
   int numMath = mathModels.size();
 
   increment->Clear();
-  for(int i = 0; i < numMath; i++){  //出现了静态变量
+  for(int i = 0; i < numMath; i++){ 
     mathModels[i]->TimeUpdate(currentTime, cvOneDOptions::dt);
   }
 

@@ -60,9 +60,6 @@ class cvOneDGlobal{
     // GLOBAL VECTOR OF DATATABLES
     static vector<cvOneDDataTable*> gDataTables;
 
-    // // Generic Solver instance
-    // static cvOneDLinearSolver *solver;
-
 };
 
 #endif // CVONEDGLOBAL_H

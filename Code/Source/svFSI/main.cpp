@@ -125,15 +125,20 @@ void Couple1D(ComMod& com_mod, const CmMod& cm_mod)
               std::cout.rdbuf(outFile.rdbuf());
 
               WriteHeader();
+
               cvOneDOptions::dt = com_mod.dt;
               cvOneDOptions::saveIncr = com_mod.saveIncr;
               cvOneDOptions::maxStep = com_mod.nTS;
+
               readModel(cpl1D.inputFileName, &cpl1D.opts);
               cpl1D.opts.check();
 
               //怎么判断接口三维一维是否一致？？
-              createAndRunModel(cpl1D);
+              createModel(cpl1D);
               cpl1D.GenerateSolution();
+
+              // SOLVE MODEL
+              cout << "Solving Model ... " << endl;
 
               std::cout.rdbuf(coutbuf);
               outFile.close();
@@ -161,7 +166,7 @@ void Couple1D(ComMod& com_mod, const CmMod& cm_mod)
             dmsg << ">>> preFrom1DEachTime: " << cpl1D.preFrom1DEachTime;
             #endif
             
-            // 法向量(0,0,1)，每个点的法向量其实有细微出入, 取平均值带入
+            // 每个点的法向量其实有细微出入, 取平均值带入
             Vector<double> nv_age(com_mod.nsd);
             for (int i = 0; i < com_mod.nsd; i++){
               for (int j = 0; j < Fa.nNo; j++){
