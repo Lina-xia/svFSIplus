@@ -3,6 +3,7 @@
 ///////////////////////
 
 # include <time.h>
+# include <iomanip> // 包含 std::setprecision 和 std::scientific 等操纵器
 
 # include "cpl1DType.h"
 # include "cvOneDGlobal.h"
@@ -38,22 +39,6 @@ using namespace std;
 
 // Static Declarations...
 int                           cpl1DType::ASCII = 1;
-// cvOneDFEAVector*              cpl1DType::currentSolution = NULL;
-// cvOneDFEAVector*              cpl1DType::previousSolution = NULL;
-// cvOneDFEAVector*              cpl1DType::increment = NULL;
-// cvOneDFEAVector*              cpl1DType::rhs = NULL;
-// cvOneDMatrix<double>          cpl1DType::TotalSolution;
-// cvOneDFEAMatrix*              cpl1DType::lhs = NULL;
-// vector<cvOneDMthModelBase*>   cpl1DType::mathModels;
-// vector<cvOneDSubdomain*>      cpl1DType::subdomainList;
-// vector<cvOneDFEAJoint*>       cpl1DType::jointList;
-// vector<int>                   cpl1DType::outletList;
-
-
-// // SET MODE PTR
-// void cpl1DType::SetModelPtr(cvOneDModel *mdl){
-//   model = mdl;
-// }
 
 // ==================
 // WRITE TEXT RESULTS
@@ -1332,6 +1317,9 @@ void cpl1DType::GenerateSolution(){
 
 void cpl1DType::Nonlinear_iter(int step){
 
+  // 设置科学计数法格式和精度
+    std::cout << std::scientific << std::setprecision(3);
+
   cvOneDString String1( "step_");
   char String2[] = "99999";
   cvOneDString title;
@@ -1402,10 +1390,9 @@ void cpl1DType::Nonlinear_iter(int step){
 
     // Check Newton-Raphson Convergence
     if((currentTime != cvOneDOptions::dt || (currentTime == cvOneDOptions::dt && iter != 0)) && normf < cvOneDOptions::convergenceTolerance && norms < cvOneDOptions::convergenceTolerance){
-      cout << "    iter: " << std::to_string(iter) << " ";
-      cout << "normf: " << normf << " ";
-      cout << "norms: " << norms << " ";
-      cout << "time: " << ((float)(tend_iter-tstart_iter))/CLOCKS_PER_SEC << endl;
+      cout << "    iter " << std::to_string(iter) << ", ";
+      cout << "normf: " << normf << ", ";
+      cout << "norms: " << norms << endl;
       break;
     }
 
@@ -1472,9 +1459,9 @@ void cpl1DType::Nonlinear_iter(int step){
     }
 
     tend_iter=clock();
-    cout << "    iter: " << std::to_string(iter) << " ";
-    cout << "normf: " << normf << " ";
-    cout << "norms: " << norms << " ";
+    cout << "    iter " << std::to_string(iter) << ", ";
+    cout << "normf: " << normf << ", ";
+    cout << "norms: " << norms << ", ";
     cout << "time: " << ((float)(tend_iter-tstart_iter))/CLOCKS_PER_SEC << endl;
 
     // Set Boundary Conditions
@@ -1484,7 +1471,6 @@ void cpl1DType::Nonlinear_iter(int step){
     if (iter == 0){
           // cvOneDMthModelBase::CurrentInletFlow = flowEachTime;
           mathModels[0]->CurrentInletFlow = flowEachTime;
-          cout << fixed <<"    CurrentInletFlow = " << flowEachTime << endl;
     }
     
     mathModels[0]->SetBoundaryConditions();
@@ -1504,9 +1490,8 @@ void cpl1DType::Nonlinear_iter(int step){
   cvOneDMaterial* threeDInterface = subdomainList[0]->GetMaterial();
   preFrom1DEachTime = threeDInterface->GetPressure(curS ,0);  //压强计算并输入
 
-  cout << fixed << "  Time = " << currentTime << ", ";
-  cout << "Tot iters = " << std::to_string(iter) << ", ";
-  cout << fixed <<"preFrom1DEachTime = " << preFrom1DEachTime << endl;
+  cout << "  Time = " << currentTime << ", ";
+  cout << "Tot iters = " << std::to_string(iter) << endl;
 
   // Save solution if needed
   if(step % cvOneDOptions::saveIncr == 0){
