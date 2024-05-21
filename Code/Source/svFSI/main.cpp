@@ -96,6 +96,7 @@ void Couple1D(ComMod& com_mod, const CmMod& cm_mod)
   #define debug_Couple1D
   #ifdef debug_Couple1D
   DebugMsg dmsg(__func__, com_mod.cm.idcm());
+  dmsg.banner();
   #endif
 
   for (int iEq = 0; iEq < com_mod.nEq; iEq++) {
@@ -116,14 +117,6 @@ void Couple1D(ComMod& com_mod, const CmMod& cm_mod)
           auto& cpl1D = bc.cpl1D;
           cpl1D.flowEachTime = all_fun::integ(com_mod, cm_mod, Fa, Yn, eq.s, eq.s + com_mod.nsd-1);
 
-          #ifdef debug_Couple1D
-            dmsg.banner();
-            // dmsg << ">>> iBc: " << iBc; 
-            dmsg << ">>> name: " << Fa.name;
-            dmsg << ">>> Fa.nNo: " << Fa.nNo;
-            // dmsg << ">>> flowEachTime: " << cpl1D.flowEachTime;  //每个时间步一更新
-          #endif
-
           if (Fa.nNo != 0){  //在特定的核上读取文件
 
             if (com_mod.cTS == 1){
@@ -141,7 +134,17 @@ void Couple1D(ComMod& com_mod, const CmMod& cm_mod)
               //怎么判断接口三维一维是否一致？？
               createAndRunModel(cpl1D);
               cpl1D.GenerateSolution();
+
+              std::cout.rdbuf(coutbuf);
+              outFile.close();
             }
+
+            #ifdef debug_Couple1D
+              // dmsg << ">>> iBc: " << iBc; 
+              dmsg << ">>> name: " << Fa.name;
+              dmsg << ">>> Fa.nNo: " << Fa.nNo;
+              // dmsg << ">>> flowEachTime: " << cpl1D.flowEachTime;  //每个时间步一更新
+            #endif
             
             std::ofstream outFile(cpl1D.outputFileName,std::ios::app);
             std::streambuf *coutbuf = std::cout.rdbuf();
@@ -202,9 +205,7 @@ void Couple1D(ComMod& com_mod, const CmMod& cm_mod)
             }
           }
           
-            dmsg << "before MPI_Barrier" << endl;
-            MPI_Barrier(MPI_COMM_WORLD);
-            dmsg << "after MPI_Barrier" << endl;      
+            MPI_Barrier(MPI_COMM_WORLD);      
         }
       }
     }
@@ -318,7 +319,7 @@ void iterate_solution(Simulation* simulation)
 
   std::cout << std::scientific << std::setprecision(16);
   
-  #define debug_iterate_solution
+  #define n_debug_iterate_solution
   #ifdef debug_iterate_solution
   DebugMsg dmsg(__func__, com_mod.cm.idcm());
   dmsg.banner();
@@ -903,7 +904,7 @@ int main(int argc, char *argv[])
   auto& cm = simulation->com_mod.cm;
   std::string file_name(argv[1]);
 
-  #define debug_main
+  #define n_debug_main
   #ifdef debug_main
   DebugMsg dmsg(__func__, cm.idcm());
   dmsg.banner();

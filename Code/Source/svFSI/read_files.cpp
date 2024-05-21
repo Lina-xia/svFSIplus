@@ -1607,7 +1607,7 @@ void read_files(Simulation* simulation, const std::string& file_name)
 
   auto& com_mod = simulation->get_com_mod();
 
-  #define debug_read_files
+  #define n_debug_read_files
   #ifdef debug_read_files
   DebugMsg dmsg(__func__, com_mod.cm.idcm());
   dmsg.banner();
