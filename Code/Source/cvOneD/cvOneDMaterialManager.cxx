@@ -65,7 +65,7 @@ int cvOneDMaterialManager::AddNewMaterialOlufsen(double density, double dynamicV
   olfmat->SetProfileExponent(profile_exponent);
   olfmat->SetReferencePressure(pRef);
   olfmat->SetMaterialType(params,pRef);
-  cout << "new cvOneMaterialOlufsen called check pRef " << olfmat->GetReferencePressure() << endl;
+  // cout << "new cvOneMaterialOlufsen called check pRef " << olfmat->GetReferencePressure() << endl;
   return cvOneDGlobal::gMaterialManager->AddNewMaterial(MaterialType_MATERIAL_OLUFSEN,(cvOneDMaterial*)olfmat);
 }
 

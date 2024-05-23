@@ -26,9 +26,11 @@ class cpl1DType
 
     //静态变量表示所有的出口共享这些数据
     static int ASCII;
+    static std::string OutputFile;
+    static bool path;
 
     //非静态变量，具有出口特异性
-    std::string outputFileName;
+    std::string outletName;
     std::string inputFileName;
 
     double flowEachTime = 0.0;

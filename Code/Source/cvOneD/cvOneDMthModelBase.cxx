@@ -266,8 +266,8 @@ void cvOneDMthModelBase::ApplyBoundaryConditions(){
       // for these BC the Inlet term doesn't have to be specialized
       // so same treatment as regular Essential BC like in Brooke's
       value = 0.0;  // RHS corresponding to imposed Essential BC
-        GetNodalEquationNumbers( 0, eqNumbers, 0);
-        solver->SetSolution( eqNumbers[1], value);
+      GetNodalEquationNumbers( 0, eqNumbers, 0);
+      solver->SetSolution( eqNumbers[1], value);
 
       // Set up the correct outlet boundary condition
       cvOneDSubdomain* sub;

@@ -93,12 +93,12 @@ void Couple1D(ComMod& com_mod, const CmMod& cm_mod)
 {
   using namespace consts;
 
-  #define debug_Couple1D
+  #define n_debug_Couple1D
   #ifdef debug_Couple1D
   DebugMsg dmsg(__func__, com_mod.cm.idcm());
-  dmsg.banner();
   #endif
 
+  auto& cm = com_mod.cm;
   for (int iEq = 0; iEq < com_mod.nEq; iEq++) {
     auto& eq = com_mod.eq[iEq];
     if (eq.phys == EquationType::phys_fluid) {
@@ -108,24 +108,13 @@ void Couple1D(ComMod& com_mod, const CmMod& cm_mod)
         int iM = bc.iM;
         auto& Fa = com_mod.msh[iM].fa[iFa];
         auto& Yn = com_mod.Yn;
-        auto& cm = com_mod.cm;
-        // dmsg << ">>> bc.iM: " << bc.iM ;
-        // dmsg << ">>> bc.bType:" << bc.bType << endl;
 
         //边界的计算是按照顺序来的
         if(utils::btest(bc.bType, enum_int(BoundaryConditionType::bType_cpl1D))){    
           auto& cpl1D = bc.cpl1D;
           cpl1D.flowEachTime = all_fun::integ(com_mod, cm_mod, Fa, Yn, eq.s, eq.s + com_mod.nsd-1);
-
           if (Fa.nNo != 0){  //在特定的核上读取文件
-
             if (com_mod.cTS == 1){
-              std::ofstream outFile(cpl1D.outputFileName);
-              std::streambuf *coutbuf = std::cout.rdbuf();
-              std::cout.rdbuf(outFile.rdbuf());
-
-              WriteHeader();
-
               cvOneDOptions::dt = com_mod.dt;
               cvOneDOptions::saveIncr = com_mod.saveIncr;
               cvOneDOptions::maxStep = com_mod.nTS;
@@ -136,32 +125,20 @@ void Couple1D(ComMod& com_mod, const CmMod& cm_mod)
               //怎么判断接口三维一维是否一致？？
               createModel(cpl1D);
               cpl1D.GenerateSolution();
-
-              // SOLVE MODEL
-              cout << "Solving Model ... " << endl;
-
-              std::cout.rdbuf(coutbuf);
-              outFile.close();
             }
 
             #ifdef debug_Couple1D
-              // dmsg << ">>> iBc: " << iBc; 
+              dmsg.banner();
+              dmsg << ">>> iBc: " << iBc; 
               dmsg << ">>> name: " << Fa.name;
               dmsg << ">>> Fa.nNo: " << Fa.nNo;
-              // dmsg << ">>> flowEachTime: " << cpl1D.flowEachTime;  //每个时间步一更新
+              dmsg << ">>> flowEachTime: " << cpl1D.flowEachTime;
             #endif
             
-            std::ofstream outFile(cpl1D.outputFileName,std::ios::app);
-            std::streambuf *coutbuf = std::cout.rdbuf();
-            std::cout.rdbuf(outFile.rdbuf());
-
             // 一维非线性迭代 STRAT
             cpl1D.Nonlinear_iter(com_mod.cTS);
             //END
-
-            std::cout.rdbuf(coutbuf);
-            outFile.close();
-
+            
             #ifdef debug_Couple1D
             dmsg << ">>> preFrom1DEachTime: " << cpl1D.preFrom1DEachTime;
             #endif
@@ -209,14 +186,12 @@ void Couple1D(ComMod& com_mod, const CmMod& cm_mod)
               }
             }
           }
-          
-            MPI_Barrier(MPI_COMM_WORLD);      
+        }
+        MPI_Barrier(MPI_COMM_WORLD); 
         }
       }
     }
-  }
-  
-  }
+}
 
 /// @brief Iterate the precomputed state-variables in time using linear interpolation to the current time step size
 //

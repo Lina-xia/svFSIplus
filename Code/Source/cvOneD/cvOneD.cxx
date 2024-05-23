@@ -72,14 +72,14 @@ int getDataTableIDFromStringKey(string key){
 
   cvOneDOptions* opts = &cpl1D.opts;
   // MESSAGE
-  cout << endl;
-  cout << "Creating and Running Model ..." << endl;
+  // cout << endl;
+  // cout << "Creating and Running Model ..." << endl;
 
   // CREATE MODEL MANAGER
   cvOneDModelManager* oned = new cvOneDModelManager((char*)opts->modelName.c_str());
 
   // CREATE NODES
-  cout << "Creating Nodes ... " << endl;
+  // cout << "Creating Nodes ... " << endl;
   int totNodes = opts->nodeName.size();
   int nodeError = CV_OK;
   for(int loopA=0;loopA<totNodes;loopA++){
@@ -92,7 +92,7 @@ int getDataTableIDFromStringKey(string key){
   }
 
   // CREATE JOINTS
-  cout << "Creating Joints ... " << endl;
+  // cout << "Creating Joints ... " << endl;
   int totJoints = opts->jointName.size();
   int jointError = CV_OK;
   int* asInlets = NULL;
@@ -151,7 +151,7 @@ int getDataTableIDFromStringKey(string key){
   }
 
   // CREATE MATERIAL
-  cout << "Creating Materials ... " << endl;
+  // cout << "Creating Materials ... " << endl;
   int totMaterials = opts->materialName.size();
   int matError = CV_OK;
   double doubleParams[3];
@@ -185,7 +185,7 @@ int getDataTableIDFromStringKey(string key){
   }
 
   // CREATE DATATABLES
-  cout << "Creating Data Tables ... " << endl;
+  // cout << "Creating Data Tables ... " << endl;
   int totCurves = opts->dataTableName.size();
   int curveError = CV_OK;
   for(int loopA=0;loopA<totCurves;loopA++){
@@ -196,7 +196,7 @@ int getDataTableIDFromStringKey(string key){
   }
 
   // SEGMENT DATA
-  cout << "Creating Segments ... " << endl;
+  // cout << "Creating Segments ... " << endl;
   int segmentError = CV_OK;
   int totalSegments = opts->segmentName.size();
   int curveTotals = 0;
@@ -273,8 +273,8 @@ int getDataTableIDFromStringKey(string key){
 void readModelFile(string inputFile, cvOneDOptions* opts, cvStringVec includedFiles){
 
   // Message
-  cout << endl;
-  cout << "Reading file: " << inputFile.c_str() << "..." << endl;
+  // cout << endl;
+  // cout << "Reading file: " << inputFile.c_str() << "..." << endl;
 
   // Declare
   cvStringVec tokenizedString;

@@ -38,7 +38,9 @@ using namespace std;
 
 
 // Static Declarations...
-int                           cpl1DType::ASCII = 1;
+int       cpl1DType::ASCII = 1;
+string    cpl1DType::OutputFile = string("OneDSolver.out");
+bool       cpl1DType::path = 0;
 
 // ==================
 // WRITE TEXT RESULTS
@@ -1001,9 +1003,9 @@ void cpl1DType::prepro(void){
 void cpl1DType::DefineMthModels(){
   mathModels.clear();
 
-  cout << "Subdomain No. "<<subdomainList.size() << endl;
-  cout << "Joint No. "<< jointList.size() << endl;
-  cout << "Outlet No. "<< outletList.size() << endl;
+  // cout << "Subdomain No. "<<subdomainList.size() << endl;
+  // cout << "Joint No. "<< jointList.size() << endl;
+  // cout << "Outlet No. "<< outletList.size() << endl;
   cvOneDMthSegmentModel* segM = new cvOneDMthSegmentModel(subdomainList, jointList, outletList, cvOneDOptions::quadPoints);
 
   cvOneDMthBranchModel* branchM = new cvOneDMthBranchModel(subdomainList, jointList, outletList);
@@ -1026,12 +1028,12 @@ void cpl1DType::QuerryModelInformation(void)
   outletList.resize(0);
   subdomainList.resize(0);
 
-    cout << endl;
-    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
-    cout << "Number of Joints: " << ij << endl;
-    cout << "Number of Segments: " << is << endl;
-    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
-    cout << endl;
+    // cout << endl;
+    // cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
+    // cout << "Number of Joints: " << ij << endl;
+    // cout << "Number of Segments: " << is << endl;
+    // cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
+    // cout << endl;
 
     long int i, j;
 
@@ -1114,14 +1116,14 @@ void cpl1DType::QuerryModelInformation(void)
         int num;
         seg->getBoundRCRValues(&rcr,&num);
         subdomain -> SetBoundRCRValues(rcr,num);
-        cout<<"RCR boundary condition"<<endl;
+        // cout<<"RCR boundary condition"<<endl;
 
       }else if(boundT == BoundCondTypeScope::RESISTANCE){ // modified resistance taking Pd wgyang
         double* resistance_pd;
         int num;
         seg->getBoundRCRValues(&resistance_pd,&num);
         subdomain -> SetBoundResistPdValues(resistance_pd,num);
-        cout<<"RESISTANCE boundary condition"<<endl;
+        // cout<<"RESISTANCE boundary condition"<<endl;
 
       }else if (boundT == BoundCondTypeScope::PRESSURE_WAVE){
         double* time;
@@ -1136,7 +1138,7 @@ void cpl1DType::QuerryModelInformation(void)
         int num;
         seg->getBoundCoronaryValues(&p_lv, &time, &num);
         subdomain->SetBoundCoronaryValues(time, p_lv,num);
-        cout<<"CORONARY boundary condition"<<endl;
+        // cout<<"CORONARY boundary condition"<<endl;
 
       }else{
         subdomain -> SetBoundValue(boundV);
@@ -1170,7 +1172,7 @@ void cpl1DType::CreateGlobalArrays(void){
     clear( neq + 1, maxa);
 
     int neeq = mathModels[0]->GetNumberOfElementEquations();
-    cout <<"Number of equations " << neq << endl;
+    // cout <<"Number of equations " << neq << endl;
     long* eqNumbers = new long[neeq];
     assert( eqNumbers != 0);
     long minEq, total;
@@ -1213,22 +1215,18 @@ void cpl1DType::CreateGlobalArrays(void){
     lhs = new cvOneDSkylineMatrix(neq, maxa, "globalMatrix");
     // cvOneDGlobal::solver = new cvOneDSkylineLinearSolver();
     mathModels[0]->solver = new cvOneDSkylineLinearSolver();
-    cout << "USE_SKYLINE is definite." << endl;
 # endif
 
 # ifdef USE_SUPERLU
     lhs = new cvOneDSparseMatrix(neq, maxa, "globalMatrix");
     // cvOneDGlobal::solver = new cvOneDSparseLinearSolver();
     mathModels[0]->solver = new cvOneDSparseLinearSolver();
-
 # endif
 
 # ifdef USE_CSPARSE
     lhs = new cvOneDSparseMatrix(neq, maxa, "globalMatrix");
     // cvOneDGlobal::solver = new cvOneDSparseLinearSolver();
     mathModels[0]->solver = new cvOneDSparseLinearSolver();
-
-    
 # endif
 
     assert(lhs != 0);
@@ -1286,19 +1284,19 @@ void cpl1DType::CalcInitProps(long ID){
 // =================
 void cpl1DType::GenerateSolution(){
 
-  // Print the formulation used
-  if(cvOneDOptions::useIV){
-    cout << "Using Conservative Form ..." << endl;
-  }else{
-    cout << "Using Advective Form ..." << endl;
-  }
+  // // Print the formulation used
+  // if(cvOneDOptions::useIV){
+  //   cout << "Using Conservative Form ..." << endl;
+  // }else{
+  //   cout << "Using Advective Form ..." << endl;
+  // }
 
   // Allocate the TotalSolution Array.
   long numSteps = cvOneDOptions::maxStep/cvOneDOptions::saveIncr;
-  cout << "maxStep/saveIncr: " << numSteps << endl;
   TotalSolution.SetSize(numSteps+1, currentSolution -> GetDimension());
-  cout << "Total Solution is: " << numSteps << " x ";
-  cout << currentSolution -> GetDimension() << endl;
+  // cout << "maxStep/saveIncr: " << numSteps << endl;
+  // cout << "Total Solution is: " << numSteps << " x ";
+  // cout << currentSolution -> GetDimension() << endl;
 
   previousSolution->Rename( "step_0");
   *currentSolution = *previousSolution;
@@ -1317,17 +1315,16 @@ void cpl1DType::GenerateSolution(){
 
 void cpl1DType::Nonlinear_iter(int step){
 
-  // 设置科学计数法格式和精度
-    std::cout << std::scientific << std::setprecision(3);
+  //设置输出流及其精度
+  std::ofstream outFile(cpl1DType::OutputFile, std::ios::app);
+  std::cout << std::scientific << std::setprecision(3);
+  outFile << std::scientific << std::setprecision(3);;
 
   cvOneDString String1( "step_");
   char String2[] = "99999";
   cvOneDString title;
-
   clock_t tstart_iter;
-  clock_t tstart_solve;
   clock_t tend_iter;
-  clock_t tend_solve;
 
   int numMath = mathModels.size();
 
@@ -1340,12 +1337,14 @@ void cpl1DType::Nonlinear_iter(int step){
   int iter = 0;
   double normf = 1.0;
   double norms = 1.0;
+  double timeConsumed = 0.0;
 
   currentTime += cvOneDOptions::dt;
 
   while(true){  //iter循环
-    tstart_iter=clock();
 
+    tstart_iter=clock();
+      
     for(int i = 0; i < numMath; i++){
       mathModels[i]->FormNewton(lhs, rhs);
     }
@@ -1387,14 +1386,18 @@ void cpl1DType::Nonlinear_iter(int step){
     if (std::isnan(norms) || std::isnan(normf)) {
         throw cvException("Calculated a NaN for the residual.");
     }
-
+    
+    if (iter > 0) {
+      outFile << "[" << outletName << "]: " << step << "-" << iter << "  " << normf << "  " << norms << "  " << timeConsumed << endl;
+      cout << "[" << outletName << "]: " << step << "-" << iter << "  " << normf << "  " << norms << "  " << timeConsumed << endl;
+    }
+    
     // Check Newton-Raphson Convergence
     if((currentTime != cvOneDOptions::dt || (currentTime == cvOneDOptions::dt && iter != 0)) && normf < cvOneDOptions::convergenceTolerance && norms < cvOneDOptions::convergenceTolerance){
-      cout << "    iter " << std::to_string(iter) << ", ";
-      cout << "normf: " << normf << ", ";
-      cout << "norms: " << norms << endl;
+      outFile << "----------------------------------------------------" << endl;
       break;
     }
+
 
     // Add increment
     increment->Clear();
@@ -1458,22 +1461,14 @@ void cpl1DType::Nonlinear_iter(int step){
       currentSolution->CheckPositive(0,2,currentSolution->GetDimension());
     }
 
-    tend_iter=clock();
-    cout << "    iter " << std::to_string(iter) << ", ";
-    cout << "normf: " << normf << ", ";
-    cout << "norms: " << norms << ", ";
-    cout << "time: " << ((float)(tend_iter-tstart_iter))/CLOCKS_PER_SEC << endl;
 
     // Set Boundary Conditions
-    // GetFlowRate function computes only once per time step, which is used in each nonlinear iteration
-    cvOneDSubdomain* sub;
-    sub = subdomainList[0];
-    if (iter == 0){
-          // cvOneDMthModelBase::CurrentInletFlow = flowEachTime;
-          mathModels[0]->CurrentInletFlow = flowEachTime;
-    }
-    
+    // cvOneDMthModelBase::CurrentInletFlow = flowEachTime;
+    mathModels[0]->CurrentInletFlow = flowEachTime;
     mathModels[0]->SetBoundaryConditions();
+
+    tend_iter=clock();
+    timeConsumed = ((float)(tend_iter-tstart_iter))/CLOCKS_PER_SEC;
 
     if(iter > MAX_NONLINEAR_ITERATIONS){
       cout << "Error: Newton not converged, exceed max iterations" << endl;
@@ -1490,9 +1485,6 @@ void cpl1DType::Nonlinear_iter(int step){
   cvOneDMaterial* threeDInterface = subdomainList[0]->GetMaterial();
   preFrom1DEachTime = threeDInterface->GetPressure(curS ,0);  //压强计算并输入
 
-  cout << "  Time = " << currentTime << ", ";
-  cout << "Tot iters = " << std::to_string(iter) << endl;
-
   // Save solution if needed
   if(step % cvOneDOptions::saveIncr == 0){
     sprintf( String2, "%ld", (unsigned long)step);
@@ -1505,4 +1497,5 @@ void cpl1DType::Nonlinear_iter(int step){
     q++;
   }
   *previousSolution = *currentSolution;
+  outFile.close();
 } // End global loop

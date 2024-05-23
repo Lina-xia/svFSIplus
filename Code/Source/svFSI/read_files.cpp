@@ -214,9 +214,25 @@ void read_bc(Simulation* simulation, EquationParameters* eq_params, eqType& lEq,
     lBc.bType = utils::ibset(lBc.bType, enum_int(BoundaryConditionType::bType_std));
 
     //读取name
-    std::string FileName = simulation->com_mod.msh[lBc.iM].fa[lBc.iFa].name;
-    lBc.cpl1D.inputFileName = FileName + std::string(".in");
-    lBc.cpl1D.outputFileName = FileName + std::string(".out");
+    lBc.cpl1D.outletName = simulation->com_mod.msh[lBc.iM].fa[lBc.iFa].name;
+    lBc.cpl1D.inputFileName = lBc.cpl1D.outletName + std::string(".in");
+    
+    auto& chnl_mod = simulation->chnl_mod;
+    if (chnl_mod.appPath != "" && cpl1DType::path == false) { 
+      auto mkdir_arg = std::string("mkdir -p ") + chnl_mod.appPath;
+      std::system(mkdir_arg.c_str());
+      cpl1DType::OutputFile = chnl_mod.appPath + "/" + cpl1DType::OutputFile;
+      cout << "----------------------------------------------------" << endl;
+      cout << "[outletName]: step-iter  normf  norms  time_consumed" << endl;
+      cout << "----------------------------------------------------" << endl;
+      std::ofstream outFile(cpl1DType::OutputFile); //打开文件
+      outFile << "----------------------------------------------------" << endl;
+      outFile << "[outletName]: step-iter  normf  norms  time_consumed" << endl;
+      outFile << "----------------------------------------------------" << endl;
+      outFile.close();
+
+      cpl1DType::path = true;
+    }
 
   } else {
     throw std::runtime_error("[read_bc] Unknown boundary condition type '" + bc_type + "'.");

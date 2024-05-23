@@ -30,7 +30,6 @@
 
 #include "ComMod.h"
 
-
 //--------
 // ComMod 
 //--------

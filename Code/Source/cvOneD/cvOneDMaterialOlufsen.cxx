@@ -102,8 +102,8 @@ void cvOneDMaterialOlufsen::SetMaterialType(double *mType,double Pref){
   K2_ = mType[1];
   K3_ = mType[2];
   PP1_=Pref;
-  cout<< "Setting material K's "<< K1_ <<" "<< K2_<<" "<< K3_<< " ..." << endl;
-  cout<< "Setting reference Pressure "<< PP1_<<endl;
+  // cout<< "Setting material K's "<< K1_ <<" "<< K2_<<" "<< K3_<< " ..." << endl;
+  // cout<< "Setting reference Pressure "<< PP1_<<endl;
  //  printf("call SetMaterialType K3_ %f \n",K3_);
 }
 

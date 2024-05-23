@@ -597,8 +597,9 @@ void dist_bc(ComMod& com_mod, const CmMod& cm_mod, const cmType& cm, bcType& lBc
   }
 
   if (utils::btest(lBc.bType, static_cast<int>(BoundaryConditionType::bType_cpl1D))) {
-    cm.bcast(cm_mod, lBc.cpl1D.outputFileName);
+    cm.bcast(cm_mod, lBc.cpl1D.outletName);
     cm.bcast(cm_mod, lBc.cpl1D.inputFileName);
+    cm.bcast(cm_mod, lBc.cpl1D.OutputFile);
   }
 
   // Communicating time-dependent BC data
