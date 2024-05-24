@@ -35,9 +35,9 @@ class cpl1DType
 
     double flowEachTime = 0.0;
     double preFrom1DEachTime = 0.0;
-    int q = 1;  // Global Solution Loop
+    int    q = 1;  // Global Solution Loop
     double currentTime;
-    bool wasSet = false;
+    bool   wasSet = false;
 
     cvOneDOptions opts;
     // Pointer to the Model

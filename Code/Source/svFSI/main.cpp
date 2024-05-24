@@ -63,6 +63,7 @@
 
 #include "cvOneDGlobal.h"
 #include "cvOneD.h"
+#include <unistd.h> // 包含 chdir 函数
 
 /// @brief Read in a solver XML file and all mesh and BC data.  
 //
@@ -89,9 +90,11 @@ void read_files(Simulation* simulation, const std::string& file_name)
   
 }
 
-void Couple1D(ComMod& com_mod, const CmMod& cm_mod)
+void Couple1D(Simulation* simulation)
 {
   using namespace consts;
+  auto& com_mod = simulation->com_mod;
+  auto& cm_mod = simulation->cm_mod;
 
   #define n_debug_Couple1D
   #ifdef debug_Couple1D
@@ -161,8 +164,8 @@ void Couple1D(ComMod& com_mod, const CmMod& cm_mod)
             dmsg << ">>> h: " << bc.h;
             #endif
 
-            //在最后一个时间步
-            if (com_mod.cTS == cvOneDOptions::maxStep){ 
+            if (com_mod.cTS == cvOneDOptions::maxStep){
+              chdir(simulation->chnl_mod.appPath.c_str()); 
               // Some Post Processing,一维
               if(cvOneDOptions::outputType == OutputTypeScope::OUTPUT_TEXT){
                 cpl1D.postprocess_Text();
@@ -810,7 +813,7 @@ void iterate_solution(Simulation* simulation)
       output::output_result(simulation, com_mod.timeP, 2, iEqOld);
     }
 
-    Couple1D(com_mod, cm_mod);
+    Couple1D(simulation);
 
     // [NOTE] Not implemented.
     //

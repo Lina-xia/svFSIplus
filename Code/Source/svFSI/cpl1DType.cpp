@@ -40,7 +40,7 @@ using namespace std;
 // Static Declarations...
 int       cpl1DType::ASCII = 1;
 string    cpl1DType::OutputFile = string("OneDSolver.out");
-bool       cpl1DType::path = 0;
+bool      cpl1DType::path = 0;
 
 // ==================
 // WRITE TEXT RESULTS
@@ -1471,6 +1471,10 @@ void cpl1DType::Nonlinear_iter(int step){
     timeConsumed = ((float)(tend_iter-tstart_iter))/CLOCKS_PER_SEC;
 
     if(iter > MAX_NONLINEAR_ITERATIONS){
+      outFile << "Error: Newton not converged, exceed max iterations" << endl;
+      outFile << "norm of Flow rate:" << normf << ", norm of Area:" << norms << endl;
+      outFile << "----------------------------------------------------" << endl;
+
       cout << "Error: Newton not converged, exceed max iterations" << endl;
       cout << "norm of Flow rate:" << normf << ", norm of Area:" << norms << endl;
       break;
@@ -1497,5 +1501,5 @@ void cpl1DType::Nonlinear_iter(int step){
     q++;
   }
   *previousSolution = *currentSolution;
-  outFile.close();
+   outFile.close();
 } // End global loop
