@@ -78,11 +78,11 @@ void cpl1DType::postprocess_Text(string& path){
 
     char *btemp= model-> getModelName(); // add to write out binary files for java
     
-    strcpy(tmp2, btemp);
-    strcpy(tmp3, btemp);
-    strcpy(tmp4, btemp);
-    strcpy(tmp5, btemp);
-    strcpy(tmp6, btemp);
+    strcat(tmp2, btemp);
+    strcat(tmp3, btemp);
+    strcat(tmp4, btemp);
+    strcat(tmp5, btemp);
+    strcat(tmp6, btemp);
 
     strcat(tmp2, tmp1);
     strcat(tmp2, "_flow.dat");
@@ -285,7 +285,7 @@ void cpl1DType::postprocess_VTK_XML3D_ONEFILE(string& path){
   char* modelName= model->getModelName();
   strcpy(fileName, path.c_str());
 
-  strcpy(fileName, modelName);
+  strcat(fileName, modelName);
   strcat(fileName, ".vtp");
   FILE* vtkFile;
   vtkFile=fopen(fileName,"w");
@@ -932,7 +932,7 @@ void cpl1DType::postprocess_VTK_XML3D_MULTIPLEFILES(string& path){
   }
 
   // Create Final PVD File with summary
-  fileName = string(model->getModelName()) + string(".pvd");
+  fileName = path + string(model->getModelName()) + string(".pvd");
   FILE* pvdFile;
   pvdFile = fopen(fileName.c_str(),"w");
 
