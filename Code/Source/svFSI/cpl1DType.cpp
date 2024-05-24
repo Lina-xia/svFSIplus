@@ -45,7 +45,7 @@ bool      cpl1DType::path = 0;
 // ==================
 // WRITE TEXT RESULTS
 // ==================
-void cpl1DType::postprocess_Text(){
+void cpl1DType::postprocess_Text(string& path){
   int j;
   int fileIter;
   int elCount = 0;
@@ -70,8 +70,14 @@ void cpl1DType::postprocess_Text(){
     char tmp5[512];
     char tmp6[512]; // WSS
 
-    char *btemp= model-> getModelName(); // add to write out binary files for java
+    strcpy(tmp2, path.c_str());
+    strcpy(tmp3, path.c_str());
+    strcpy(tmp4, path.c_str());
+    strcpy(tmp5, path.c_str());
+    strcpy(tmp6, path.c_str());
 
+    char *btemp= model-> getModelName(); // add to write out binary files for java
+    
     strcpy(tmp2, btemp);
     strcpy(tmp3, btemp);
     strcpy(tmp4, btemp);
@@ -263,7 +269,7 @@ void evalSegmentLocalAxis(double axis[][3]){
 // =======================================
 // WRITE 3D XML VTK RESULTS - ALL ONE FILE
 // =======================================
-void cpl1DType::postprocess_VTK_XML3D_ONEFILE(){
+void cpl1DType::postprocess_VTK_XML3D_ONEFILE(string& path){
 
   // Set Constant Number of Subdivisions on the vessel circumference
   int circSubdiv = 20;
@@ -277,6 +283,8 @@ void cpl1DType::postprocess_VTK_XML3D_ONEFILE(){
   // Set and open VTK file
   char fileName[512];
   char* modelName= model->getModelName();
+  strcpy(fileName, path.c_str());
+
   strcpy(fileName, modelName);
   strcat(fileName, ".vtp");
   FILE* vtkFile;
@@ -588,7 +596,7 @@ void cpl1DType::postprocess_VTK_XML3D_ONEFILE(){
 // =======================================================
 // WRITE 3D XML VTK RESULTS - MULTIPLE FILES FOR ANIMATION
 // =======================================================
-void cpl1DType::postprocess_VTK_XML3D_MULTIPLEFILES(){
+void cpl1DType::postprocess_VTK_XML3D_MULTIPLEFILES(string& path){
 
   // Set Constant Number of Subdivisions on the vessel circumference
   int circSubdiv = 20;
@@ -702,10 +710,11 @@ void cpl1DType::postprocess_VTK_XML3D_MULTIPLEFILES(){
 
     // Set and open VTK file for current time step
     fileName = model->getModelName();
+
     char timeString[512];
     char suffix[512];
     sprintf(timeString, "_%05d", loopTime);
-    fileName = fileName + string(timeString) + ".vtp";
+    fileName = path + fileName + string(timeString) + ".vtp";
     FILE* vtkFile;
     vtkFile = fopen(fileName.c_str(),"w");
     // Add to a list of files
@@ -1438,7 +1447,8 @@ void cpl1DType::Nonlinear_iter(int step){
       }
 
       if(negArea==1) {
-      postprocess_Text();
+      std::string emptyString;
+      postprocess_Text(emptyString);
       assert(0);
       }
 

@@ -50,10 +50,9 @@ class cpl1DType
     void Nonlinear_iter(int step);
 
     // Result Output
-    void postprocess_Text();
-    void postprocess_VTK();
-    void postprocess_VTK_XML3D_ONEFILE();
-    void postprocess_VTK_XML3D_MULTIPLEFILES();
+    void postprocess_Text(std::string& path);
+    void postprocess_VTK_XML3D_ONEFILE(std::string& path);
+    void postprocess_VTK_XML3D_MULTIPLEFILES(std::string& path);
 
     //一些没用过的函数
     // Find Segment index given the ID

@@ -164,27 +164,28 @@ void Couple1D(Simulation* simulation)
             dmsg << ">>> h: " << bc.h;
             #endif
 
-            if (com_mod.cTS == cvOneDOptions::maxStep){
-              chdir(simulation->chnl_mod.appPath.c_str()); 
-              // Some Post Processing,一维
+            if (com_mod.cTS == cvOneDOptions::maxStep){ 
+              // Some Post Processing
+              std::string path = simulation->chnl_mod.appPath + "/";
+              
               if(cvOneDOptions::outputType == OutputTypeScope::OUTPUT_TEXT){
-                cpl1D.postprocess_Text();
+                cpl1D.postprocess_Text(path);
               }else if(cvOneDOptions::outputType == OutputTypeScope::OUTPUT_VTK){
                 if(cvOneDOptions::vtkOutputType == 0){
                   // Export in multifile format
-                  cpl1D.postprocess_VTK_XML3D_MULTIPLEFILES();
+                  cpl1D.postprocess_VTK_XML3D_MULTIPLEFILES(path);
                 }else{
                   // All results in a single VTK File
-                  cpl1D.postprocess_VTK_XML3D_ONEFILE();
+                  cpl1D.postprocess_VTK_XML3D_ONEFILE(path);
                 }
               }else if(cvOneDOptions::outputType == OutputTypeScope::OUTPUT_BOTH){
-                cpl1D.postprocess_Text();
+                cpl1D.postprocess_Text(path);
                 if(cvOneDOptions::vtkOutputType == 0){
                   // Export in multifile format
-                  cpl1D.postprocess_VTK_XML3D_MULTIPLEFILES();
+                  cpl1D.postprocess_VTK_XML3D_MULTIPLEFILES(path);
                 }else{
                   // All results in a single VTK File
-                  cpl1D.postprocess_VTK_XML3D_ONEFILE();
+                  cpl1D.postprocess_VTK_XML3D_ONEFILE(path);
                 }
               }
             }
