@@ -209,7 +209,6 @@ endif()
 
 
 # xia
-IF(sparseSolverType STREQUAL "skyline")
   FILE(GLOB SRC_C "${CMAKE_CURRENT_SOURCE_DIR}/../../cvOneD/*.c"
                   "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/*.cxx")
   FILE(GLOB SRC_H "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/*.h")
@@ -221,6 +220,7 @@ IF(sparseSolverType STREQUAL "skyline")
   LINK_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD)
   # message("CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
 
+IF(sparseSolverType STREQUAL "skyline")
   simvascular_add_executable(${SV_SVFSI_EXE}
       SRCS ${CSRCS} ${SRC_C} ${SRC_H}
       DEV_SCRIPT_NAME "mysvfsi"
@@ -229,8 +229,6 @@ IF(sparseSolverType STREQUAL "skyline")
       INSTALL_DESTINATION ${SV_INSTALL_RUNTIME_DIR})
 
   target_compile_definitions(${SV_SVFSI_EXE} PRIVATE USE_SKYLINE)
-
-  # message(STATUS "SRC_C of svFSI: ${SRC_C}")
 
 ELSEIF(sparseSolverType STREQUAL "superlu")
 
@@ -262,9 +260,9 @@ ELSEIF(sparseSolverType STREQUAL "superlu")
 
   # ADD FILES IN ADDITIONAL FOLDERS
   FILE(GLOB SUPERLU_SRC_C "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/*.c"
-                          "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/*.cpp"
+                          "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/*.cxx"
                           "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/superlu/*.c"
-                          "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/superlu/*.cpp")
+                          "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/superlu/*.cxx")
   FILE(GLOB SUPERLU_SRC_H "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/*.h"
                           "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/superlu/*.h")
 
@@ -295,9 +293,9 @@ ELSEIF(sparseSolverType STREQUAL "csparse")
 
   # ADD FILES IN ADDITIONAL FOLDERS
   FILE(GLOB CSPARSE_SRC_C "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/*.c"
-                          "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/*.cpp"
+                          "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/*.cxx"
                           "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/csparse/*.c"
-                          "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/csparse/*.cpp")
+                          "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/csparse/*.cxx")
   FILE(GLOB CSPARSE_SRC_H "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/*.h"
                           "${CMAKE_CURRENT_SOURCE_DIR}/../cvOneD/sparse/csparse/*.h")
 

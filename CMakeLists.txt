@@ -89,7 +89,7 @@ set(ENABLE_COVERAGE OFF CACHE BOOL "Enable code coverage")
 set(ENABLE_ARRAY_INDEX_CHECKING OFF CACHE BOOL "Enable Array index checking")
 set(SV_LOCAL_VTK_PATH "" CACHE STRING "Path to a local build of VTK.")
 set(ENABLE_UNIT_TEST OFF CACHE BOOL "Enable Unit Test by Google Test")
-SET(sparseSolverType "skyline" CACHE STRING "Use Sparse Solver")
+SET(sparseSolverType "csparse" CACHE STRING "Use Sparse Solver")
 SET_PROPERTY(CACHE sparseSolverType PROPERTY STRINGS skyline superlu csparse)
 
 # ASK THE USER TO ENTER THE SUPERLU FOLDER
@@ -161,17 +161,5 @@ ExternalProject_Add(svFSI
     ${SV_APPLE_CMAKE_ARGS}
     ${SV_ADDITIONAL_CMAKE_ARGS}
     )
-
-# # ADD DEFINITION SO THE C++ CODE CAN SEE IT
-# IF(sparseSolverType STREQUAL "skyline")
-#   target_compile_definitions(svFSI PRIVATE USE_SKYLINE)
-# ENDIF()
-# IF(sparseSolverType STREQUAL "superlu")  
-#   target_compile_definitions(svFSI PRIVATE USE_SUPERLU)
-# ENDIF()
-# IF(sparseSolverType STREQUAL "csparse")
-#   target_compile_definitions(svFSI PRIVATE USE_CSPARSE)
-# ENDIF()
-
 
 #-----------------------------------------------------------------------------

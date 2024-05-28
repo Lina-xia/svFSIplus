@@ -25,7 +25,7 @@ class cpl1DType
     // static double nTS;   //Number of timesteps, comMod.nTS
 
     //静态变量表示所有的出口共享这些数据
-    static int ASCII;
+    static int ASCII;  //VTK输出格式
     static std::string OutputFile;
     static bool path;
 

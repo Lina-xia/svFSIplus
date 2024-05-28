@@ -121,15 +121,16 @@ void cvOneDMthModelBase::SetBoundaryConditions(){
   cvOneDSubdomain* sub;
   double currP, currS, resistance;
 
-  // Set up Inlet Dirichlet boundary condition (the default is flow rate)
+  // Set up Inlet Dirichlet boundary condition
   GetNodalEquationNumbers( 0, eqNumbers, 0);
   (*currSolution)[eqNumbers[1]] = CurrentInletFlow;
+  // std::cout << "CurrentInletFlow = " << CurrentInletFlow << std::endl;
 
   for (vector<int>::iterator it=outletList.begin(); it!=outletList.end(); it++){
     GetNodalEquationNumbers(subdomainList[*it]->GetNumberOfNodes() - 1, eqNumbers, *it);
     sub = subdomainList[*it];
 
-    // Speciafically for RCR BC if treated as essential BC // added IV 051303
+  // Speciafically for RCR BC if treated as essential BC // added IV 051303
   /*    double alphaRCR, Rp, Rd, Cap, prevP;
       //double InitialQ;
       //double MemoI, MemoK, dMemoIdP, dMemoKdP;

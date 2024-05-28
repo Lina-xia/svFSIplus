@@ -34,16 +34,6 @@
 
 using namespace std;
 
-// ====================
-// WRITE PROGRAM HEADER
-// ====================
-void WriteHeader(){
-  cout << "---------------------------------" << endl;
-  cout << " oneDSolver" << endl;;
-  cout << " 1D Finite Element Hemodynamics" << endl;
-  cout << "---------------------------------" << endl;
-}
-
 // ====================================
 // GET DATA TABLE ENTRY FROM STRING KEY
 // ====================================
@@ -71,9 +61,6 @@ int getDataTableIDFromStringKey(string key){
   void createModel(cpl1DType& cpl1D){
 
   cvOneDOptions* opts = &cpl1D.opts;
-  // MESSAGE
-  // cout << endl;
-  // cout << "Creating and Running Model ..." << endl;
 
   // CREATE MODEL MANAGER
   cvOneDModelManager* oned = new cvOneDModelManager((char*)opts->modelName.c_str());

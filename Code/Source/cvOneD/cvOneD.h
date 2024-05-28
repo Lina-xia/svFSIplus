@@ -43,7 +43,6 @@
 
 using namespace std;
 
-void WriteHeader();
 int  getDataTableIDFromStringKey(string key);
 void createModel(cpl1DType& cpl1D);
 void readModelFile(string inputFile, cvOneDOptions* opts, cvStringVec includedFiles);

@@ -107,15 +107,12 @@ void Couple1D(Simulation* simulation)
     if (eq.phys == EquationType::phys_fluid) {
       for (int iBc = 0; iBc < eq.nBc; iBc++) {
         auto& bc = eq.bc[iBc];
-        int iFa = bc.iFa;
-        int iM = bc.iM;
-        auto& Fa = com_mod.msh[iM].fa[iFa];
-        auto& Yn = com_mod.Yn;
-
-        //边界的计算是按照顺序来的
-        if(utils::btest(bc.bType, enum_int(BoundaryConditionType::bType_cpl1D))){    
+        if(utils::btest(bc.bType, enum_int(BoundaryConditionType::bType_cpl1D))){
+          
+          auto& Fa = com_mod.msh[bc.iM].fa[bc.iFa];
           auto& cpl1D = bc.cpl1D;
-          cpl1D.flowEachTime = all_fun::integ(com_mod, cm_mod, Fa, Yn, eq.s, eq.s + com_mod.nsd-1);
+
+          cpl1D.flowEachTime = all_fun::integ(com_mod, cm_mod, Fa, com_mod.Yn, eq.s, eq.s + com_mod.nsd-1);
           if (Fa.nNo != 0){  //在特定的核上读取文件
             if (com_mod.cTS == 1){
               cvOneDOptions::dt = com_mod.dt;
@@ -167,7 +164,7 @@ void Couple1D(Simulation* simulation)
             if (com_mod.cTS == cvOneDOptions::maxStep){ 
               // Some Post Processing
               std::string path = simulation->chnl_mod.appPath + "/";
-              
+
               if(cvOneDOptions::outputType == OutputTypeScope::OUTPUT_TEXT){
                 cpl1D.postprocess_Text(path);
               }else if(cvOneDOptions::outputType == OutputTypeScope::OUTPUT_VTK){

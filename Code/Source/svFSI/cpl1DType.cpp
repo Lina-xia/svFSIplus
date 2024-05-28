@@ -980,32 +980,9 @@ void cpl1DType::prepro(void){
     CalcInitProps(i);
   }
 
-  // cout << "Solver() is done." << endl;
-
   // // Start Solving the system.
   // GenerateSolution();
 
-  // // Some Post Processing
-  // if(cvOneDGlobal::outputType == OutputTypeScope::OUTPUT_TEXT){
-  //   postprocess_Text();
-  // }else if(cvOneDGlobal::outputType == OutputTypeScope::OUTPUT_VTK){
-  //   if(cvOneDGlobal::vtkOutputType == 0){
-  //     // Export in multifile format
-  //     postprocess_VTK_XML3D_MULTIPLEFILES();
-  //   }else{
-  //     // All results in a single VTK File
-  //     postprocess_VTK_XML3D_ONEFILE();
-  //   }
-  // }else if(cvOneDGlobal::outputType == OutputTypeScope::OUTPUT_BOTH){
-  //   postprocess_Text();
-  //   if(cvOneDGlobal::vtkOutputType == 0){
-  //     // Export in multifile format
-  //     postprocess_VTK_XML3D_MULTIPLEFILES();
-  //   }else{
-  //     // All results in a single VTK File
-  //     postprocess_VTK_XML3D_ONEFILE();
-  //   }
-  // }
 }
 
 
@@ -1033,9 +1010,9 @@ void cpl1DType::QuerryModelInformation(void)
     is = model -> getNumberOfSegments();
     ij = model -> getNumberOfJoints();
 
-  jointList.resize(0);
-  outletList.resize(0);
-  subdomainList.resize(0);
+    jointList.resize(0);
+    outletList.resize(0);
+    subdomainList.resize(0);
 
     // cout << endl;
     // cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
