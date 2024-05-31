@@ -77,7 +77,7 @@ void cvOneDMthSegmentModel::FormNewton(cvOneDFEAMatrix* lhsMatrix, cvOneDFEAVect
 //			FormElement(element, i, &elementVector, &elementMatrix, true, true);
 
 			// finite difference jacobian
-			FormElement_FD(element, i, &elementVector, &elementMatrix);
+			FormElement_FD(element, i, &elementVector, &elementMatrix);  //这里有问题
 			rhsVector->Add(elementVector);
 			lhsMatrix->Add(elementMatrix);
 		}

@@ -33,7 +33,7 @@ class cpl1DType
     std::string outletName;
     std::string inputFileName;
 
-    double flowEachTime = 0.0;
+    double flowRateEachTime = 0.0;
     double preFrom1DEachTime = 0.0;
     int    q = 1;  // Global Solution Loop
     double currentTime;

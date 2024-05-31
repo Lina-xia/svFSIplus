@@ -1451,7 +1451,7 @@ void cpl1DType::Nonlinear_iter(int step){
 
     // Set Boundary Conditions
     // cvOneDMthModelBase::CurrentInletFlow = flowEachTime;
-    mathModels[0]->CurrentInletFlow = flowEachTime;
+    mathModels[0]->CurrentInletFlow = flowRateEachTime;
     mathModels[0]->SetBoundaryConditions();
 
     tend_iter=clock();

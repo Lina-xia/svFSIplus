@@ -1,5 +1,3 @@
-build
-
 # System files osx 
 **/.DS_Store
 
@@ -30,7 +28,11 @@ GenBC.int
 InitialData
 
 # xia
+build
 change.sh
+tests/
 my_test/
 branch/
+branch_outlet1/
 build_csparse/
+build_debug/

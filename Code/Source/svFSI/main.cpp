@@ -96,7 +96,7 @@ void Couple1D(Simulation* simulation)
   auto& com_mod = simulation->com_mod;
   auto& cm_mod = simulation->cm_mod;
 
-  #define n_debug_Couple1D
+  #define debug_Couple1D
   #ifdef debug_Couple1D
   DebugMsg dmsg(__func__, com_mod.cm.idcm());
   #endif
@@ -111,8 +111,16 @@ void Couple1D(Simulation* simulation)
           
           auto& Fa = com_mod.msh[bc.iM].fa[bc.iFa];
           auto& cpl1D = bc.cpl1D;
+          
+          // double flowRate = 0.0;
+          // for (int a = 0; a < Fa.nNo; a++){
+          //   int Ac = Fa.gN(a);  //返回全局编号
+          //   flowRate += sqrt(com_mod.Yn(s,Ac)^2 +  com_mod.Yn(s+1,Ac)^2 +  com_mod.Yn(s+2,Ac)^2);
+          // }
+          // cpl1D.flowRateEachTime = flowRate / Fa.nNo;
 
-          cpl1D.flowEachTime = all_fun::integ(com_mod, cm_mod, Fa, com_mod.Yn, eq.s, eq.s + com_mod.nsd-1);
+          cpl1D.flowRateEachTime = 5;
+
           if (Fa.nNo != 0){  //在特定的核上读取文件
             if (com_mod.cTS == 1){
               cvOneDOptions::dt = com_mod.dt;
@@ -132,7 +140,7 @@ void Couple1D(Simulation* simulation)
               dmsg << ">>> iBc: " << iBc; 
               dmsg << ">>> name: " << Fa.name;
               dmsg << ">>> Fa.nNo: " << Fa.nNo;
-              dmsg << ">>> flowEachTime: " << cpl1D.flowEachTime;
+              dmsg << ">>> flowRateEachTime: " << cpl1D.flowRateEachTime;
             #endif
             
             // 一维非线性迭代 STRAT
