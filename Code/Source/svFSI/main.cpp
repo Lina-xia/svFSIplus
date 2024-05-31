@@ -108,10 +108,9 @@ void Couple1D(Simulation* simulation)
       for (int iBc = 0; iBc < eq.nBc; iBc++) {
         auto& bc = eq.bc[iBc];
         if(utils::btest(bc.bType, enum_int(BoundaryConditionType::bType_cpl1D))){
-          
           auto& Fa = com_mod.msh[bc.iM].fa[bc.iFa];
           auto& cpl1D = bc.cpl1D;
-          
+
           // double flowRate = 0.0;
           // for (int a = 0; a < Fa.nNo; a++){
           //   int Ac = Fa.gN(a);  //返回全局编号
@@ -121,7 +120,8 @@ void Couple1D(Simulation* simulation)
 
           cpl1D.flowRateEachTime = 5;
 
-          if (Fa.nNo != 0){  //在特定的核上读取文件
+          if (Fa.nNo != 0){
+            //第一个时间步预处理
             if (com_mod.cTS == 1){
               cvOneDOptions::dt = com_mod.dt;
               cvOneDOptions::saveIncr = com_mod.saveIncr;
@@ -142,33 +142,28 @@ void Couple1D(Simulation* simulation)
               dmsg << ">>> Fa.nNo: " << Fa.nNo;
               dmsg << ">>> flowRateEachTime: " << cpl1D.flowRateEachTime;
             #endif
-            
-            // 一维非线性迭代 STRAT
+   
+            // 一维非线性迭代
             cpl1D.Nonlinear_iter(com_mod.cTS);
-            //END
-            
-            #ifdef debug_Couple1D
-            dmsg << ">>> preFrom1DEachTime: " << cpl1D.preFrom1DEachTime;
-            #endif
             
             // 每个点的法向量其实有细微出入, 取平均值带入
+            // nv_age方便查看debug
+            Vector<double> nv(com_mod.nsd);
             Vector<double> nv_age(com_mod.nsd);
             for (int i = 0; i < com_mod.nsd; i++){
               for (int j = 0; j < Fa.nNo; j++){
-                nv_age(i) += Fa.nV(i,j);
+                nv(i) += Fa.nV(i,j);  //所有点n_i的和
               }
-              nv_age(i) = nv_age(i) / Fa.nNo;
-            }
-
-            for (int i = 0; i < com_mod.nsd; i++){
+              nv_age(i) = nv(i) / Fa.nNo;
               bc.h(i) =  cpl1D.preFrom1DEachTime * nv_age(i);
             }
 
             #ifdef debug_Couple1D
+            dmsg << ">>> preFrom1DEachTime: " << cpl1D.preFrom1DEachTime;
             dmsg << ">>> nV_age: " << nv_age;
             dmsg << ">>> h: " << bc.h;
             #endif
-
+            //最后一个时间步后处理
             if (com_mod.cTS == cvOneDOptions::maxStep){ 
               // Some Post Processing
               std::string path = simulation->chnl_mod.appPath + "/";
