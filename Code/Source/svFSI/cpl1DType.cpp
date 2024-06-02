@@ -12,6 +12,7 @@
 # include "cvOneDMaterial.h"
 # include "cvOneDMthSegmentModel.h"
 # include "cvOneDMthBranchModel.h"
+# include "cvOneDModelManager.h"
 
 #ifndef WIN32
 #define _USE_MATH_DEFINES
@@ -38,6 +39,9 @@ using namespace std;
 
 
 // Static Declarations...
+double    cpl1DType::dt = 0;
+int       cpl1DType::saveIncr = 0;
+int       cpl1DType::maxStep = 0;
 int       cpl1DType::ASCII = 1;
 string    cpl1DType::OutputFile = string("OneDSolver.out");
 bool      cpl1DType::path = 0;
@@ -487,7 +491,7 @@ void cpl1DType::postprocess_VTK_XML3D_ONEFILE(string& path){
     for(int loopTime=0;loopTime<TotalSolution.Rows();loopTime++){
 
       // PRINT FLOW RATES
-      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Flowrate_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"1\" format=\"ascii\">\n",loopTime*cvOneDOptions::saveIncr,loopTime*cvOneDOptions::dt*cvOneDOptions::saveIncr);
+      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Flowrate_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"1\" format=\"ascii\">\n",loopTime*saveIncr,loopTime*dt*saveIncr);
       for(int j=startOut+1;j<finishOut;j+=2){
         for(int k=0;k<circSubdiv;k++){
           fprintf(vtkFile,"%e ",(double)TotalSolution[loopTime][j]);
@@ -497,7 +501,7 @@ void cpl1DType::postprocess_VTK_XML3D_ONEFILE(string& path){
       fprintf(vtkFile,"</DataArray>\n");
 
       // PRINT AREA
-      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Area_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"1\" format=\"ascii\">\n",loopTime*cvOneDOptions::saveIncr,loopTime*cvOneDOptions::dt*cvOneDOptions::saveIncr);
+      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Area_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"1\" format=\"ascii\">\n",loopTime*saveIncr,loopTime*dt*saveIncr);
       for(int j=startOut;j<finishOut;j+=2){
         for(int k=0;k<circSubdiv;k++){
           fprintf(vtkFile,"%e ",(double)TotalSolution[loopTime][j]);
@@ -507,7 +511,7 @@ void cpl1DType::postprocess_VTK_XML3D_ONEFILE(string& path){
       fprintf(vtkFile,"</DataArray>\n");
 
       // PRINT RADIAL DISPLACEMENTS AS VECTORS
-      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Disps_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"3\" format=\"ascii\">\n",loopTime*cvOneDOptions::saveIncr,loopTime*cvOneDOptions::dt*cvOneDOptions::saveIncr);
+      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Disps_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"3\" format=\"ascii\">\n",loopTime*saveIncr,loopTime*dt*saveIncr);
       for(int j=startOut;j<finishOut;j+=2){
 
         // Evaluate Initial Area at current location
@@ -531,7 +535,7 @@ void cpl1DType::postprocess_VTK_XML3D_ONEFILE(string& path){
       fprintf(vtkFile,"</DataArray>\n");
 
       // PRINT PRESSURE IN MMHG
-      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Pressure_mmHg_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"1\" format=\"ascii\">\n",loopTime*cvOneDOptions::saveIncr,loopTime*cvOneDOptions::dt*cvOneDOptions::saveIncr);
+      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Pressure_mmHg_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"1\" format=\"ascii\">\n",loopTime*saveIncr,loopTime*dt*saveIncr);
       segLength = currSeg->getSegmentLength();
       curMat = subdomainList[loopSegment]->GetMaterial();
       int section = 0;
@@ -546,7 +550,7 @@ void cpl1DType::postprocess_VTK_XML3D_ONEFILE(string& path){
       fprintf(vtkFile,"</DataArray>\n");
 
       // PRINT REYNOLDS NUMBER
-      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Reynolds_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"1\" format=\"ascii\">\n",loopTime*cvOneDOptions::saveIncr,loopTime*cvOneDOptions::dt*cvOneDOptions::saveIncr);
+      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Reynolds_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"1\" format=\"ascii\">\n",loopTime*saveIncr,loopTime*dt*saveIncr);
       curMat = subdomainList[loopSegment]->GetMaterial();
       for(int j=startOut;j<finishOut;j+=2){
         // Get Flow
@@ -562,7 +566,7 @@ void cpl1DType::postprocess_VTK_XML3D_ONEFILE(string& path){
       fprintf(vtkFile,"</DataArray>\n");
 
       // PRINT WSS
-      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"WSS_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"1\" format=\"ascii\">\n",loopTime*cvOneDOptions::saveIncr,loopTime*cvOneDOptions::dt*cvOneDOptions::saveIncr);
+      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"WSS_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"1\" format=\"ascii\">\n",loopTime*saveIncr,loopTime*dt*saveIncr);
       curMat = subdomainList[loopSegment]->GetMaterial();
       for(int j=startOut;j<finishOut;j+=2){
         // Get Flow
@@ -942,7 +946,7 @@ void cpl1DType::postprocess_VTK_XML3D_MULTIPLEFILES(string& path){
   double currTime = 0.0;
   for(int loopA=0;loopA<fileList.size();loopA++){
     fprintf(pvdFile,"<DataSet timestep=\"%e\" group=\"\" part=\"0\" file=\"%s\"/>",currTime,fileList[loopA].c_str());
-    currTime += cvOneDOptions::dt * cvOneDOptions::saveIncr;
+    currTime += dt * saveIncr;
   }
   fprintf(pvdFile,"</Collection>");
   fprintf(pvdFile,"</VTKFile>");
@@ -1166,6 +1170,7 @@ void cpl1DType::CreateGlobalArrays(void){
 
     // Element nodes
     total = 0;
+    // std::cout << "subdomainList.size() = " << subdomainList.size() << std::endl;
     for(int i = 0; i < subdomainList.size(); i++){
       total += subdomainList[i]->GetNumberOfNodes();
       for( long el = 0; el < subdomainList[i]->GetNumberOfElements(); el++){
@@ -1222,7 +1227,7 @@ void cpl1DType::CreateGlobalArrays(void){
 
     // cvOneDGlobal::solver->SetLHS(lhs);
     // cvOneDGlobal::solver->SetRHS(rhs);
-    // 只改了cvOneDMthSegmentModel的
+    // 只改了mathModels[0]，也就是cvOneDMthSegmentModel的
     mathModels[0]->solver->lhsMatrix = lhs;
     mathModels[0]->solver->rhsVector = rhs;
 
@@ -1278,7 +1283,7 @@ void cpl1DType::GenerateSolution(){
   // }
 
   // Allocate the TotalSolution Array.
-  long numSteps = cvOneDOptions::maxStep/cvOneDOptions::saveIncr;
+  long numSteps = maxStep/saveIncr;
   TotalSolution.SetSize(numSteps+1, currentSolution -> GetDimension());
   // cout << "maxStep/saveIncr: " << numSteps << endl;
   // cout << "Total Solution is: " << numSteps << " x ";
@@ -1313,10 +1318,11 @@ void cpl1DType::Nonlinear_iter(int step){
   clock_t tend_iter;
 
   int numMath = mathModels.size();
-
+  double currentTime = step * dt;
   increment->Clear();
+  
   for(int i = 0; i < numMath; i++){ 
-    mathModels[i]->TimeUpdate(currentTime, cvOneDOptions::dt);
+    mathModels[i]->TimeUpdate(currentTime, dt);
   }
 
   // Newton-Raphson Iterations...
@@ -1324,8 +1330,6 @@ void cpl1DType::Nonlinear_iter(int step){
   double normf = 1.0;
   double norms = 1.0;
   double timeConsumed = 0.0;
-
-  currentTime += cvOneDOptions::dt;
 
   while(true){  //iter循环
 
@@ -1379,7 +1383,7 @@ void cpl1DType::Nonlinear_iter(int step){
     }
     
     // Check Newton-Raphson Convergence
-    if((currentTime != cvOneDOptions::dt || (currentTime == cvOneDOptions::dt && iter != 0)) && normf < cvOneDOptions::convergenceTolerance && norms < cvOneDOptions::convergenceTolerance){
+    if((currentTime != dt || (currentTime == dt && iter != 0)) && normf < cvOneDOptions::convergenceTolerance && norms < cvOneDOptions::convergenceTolerance){
       outFile << "----------------------------------------------------" << endl;
       break;
     }
@@ -1477,7 +1481,7 @@ void cpl1DType::Nonlinear_iter(int step){
   preFrom1DEachTime = threeDInterface->GetPressure(curS ,0);  //压强计算并输入
 
   // Save solution if needed
-  if(step % cvOneDOptions::saveIncr == 0){
+  if(step % saveIncr == 0){
     sprintf( String2, "%ld", (unsigned long)step);
     title = String1 + String2;
     currentSolution->Rename(title.data());
@@ -1490,3 +1494,612 @@ void cpl1DType::Nonlinear_iter(int step){
   *previousSolution = *currentSolution;
    outFile.close();
 } // End global loop
+
+
+/* Copyright (c) Stanford University, The Regents of the University of
+ *               California, and others.
+ *
+ * All Rights Reserved.
+ *
+ * See Copyright-SimVascular.txt for additional details.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject
+ * to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+ * IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+ * PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+ * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#include "cpl1DType.h"
+
+using namespace std;
+
+// ====================================
+// GET DATA TABLE ENTRY FROM STRING KEY
+// ====================================
+int cpl1DType::getDataTableIDFromStringKey(string key){
+  bool found = false;
+  int count = 0;
+  while((!found)&&(count<cvOneDGlobal::gDataTables.size())){
+    found = upper_string(key) == upper_string(cvOneDGlobal::gDataTables[count]->getName());
+    // Update Counter
+    if(!found){
+      count++;
+    }
+  }
+  if(!found){
+    throw cvException(string("ERROR: Cannot find data table entry from string key: " + key + ".\n").c_str());
+    return -1;
+  }else{
+    return count;
+  }
+}
+
+// ===============================
+// CREATE MODEL AND RUN SIMULATION
+// ===============================
+void cpl1DType::createModel(){
+
+  // CREATE MODEL MANAGER
+  cvOneDModelManager* oned = new cvOneDModelManager((char*)opts.modelName.c_str());
+
+  // CREATE NODES
+  // cout << "Creating Nodes ... " << endl;
+  int totNodes = opts.nodeName.size();
+  int nodeError = CV_OK;
+  for(int loopA=0;loopA<totNodes;loopA++){
+    // Finally Create Joint
+    nodeError = oned->CreateNode((char*)opts.nodeName[loopA].c_str(),
+                                   opts.nodeXcoord[loopA], opts.nodeYcoord[loopA], opts.nodeZcoord[loopA]);
+    if(nodeError == CV_ERROR){
+      throw cvException(string("ERROR: Error Creating NODE " + to_string(loopA) + "\n").c_str());
+    }
+  }
+
+  // CREATE JOINTS
+  // cout << "Creating Joints ... " << endl;
+  int totJoints = opts.jointName.size();
+  int jointError = CV_OK;
+  int* asInlets = NULL;
+  int* asOutlets = NULL;
+  string currInletName;
+  string currOutletName;
+  int jointInletID = 0;
+  int jointOutletID = 0;
+  int totJointInlets = 0;
+  int totJointOutlets = 0;
+  for(int loopA=0;loopA<totJoints;loopA++){
+    // GET NAMES FOR INLET AND OUTLET
+    currInletName = opts.jointInletName[loopA];
+    currOutletName = opts.jointOutletName[loopA];
+    // FIND JOINTINLET INDEX
+    jointInletID = getListIDWithStringKey(currInletName,opts.jointInletListNames);
+    if(jointInletID < 0){
+      throw cvException(string("ERROR: Cannot Find JOINTINLET for key " + currInletName).c_str());
+    }
+    totJointInlets = opts.jointInletListNumber[jointInletID];
+    // FIND JOINTOUTLET INDEX
+    jointOutletID = getListIDWithStringKey(currOutletName,opts.jointOutletListNames);
+    if(jointInletID < 0){
+      throw cvException(string("ERROR: Cannot Find JOINTOUTLET for key " + currOutletName).c_str());
+    }
+    // GET TOTALS
+    totJointInlets = opts.jointInletListNumber[jointInletID];
+    totJointOutlets = opts.jointOutletListNumber[jointOutletID];
+    // ALLOCATE INLETS AND OUTLET LIST
+    asInlets = NULL;
+    asOutlets = NULL;
+    if(totJointInlets > 0){
+      asInlets = new int[totJointInlets];
+      for(int loopB=0;loopB<totJointInlets;loopB++){
+        asInlets[loopB] = opts.jointInletList[jointInletID][loopB];
+      }
+    }
+    if(totJointOutlets > 0){
+      asOutlets = new int[totJointOutlets];
+      for(int loopB=0;loopB<totJointOutlets;loopB++){
+        asOutlets[loopB] = opts.jointOutletList[jointOutletID][loopB];
+      }
+    }
+    // Finally Create Joint
+    jointError = oned->CreateJoint((char*)opts.jointName[loopA].c_str(),
+                                   opts.nodeXcoord[loopA], opts.nodeYcoord[loopA], opts.nodeZcoord[loopA],
+                                   totJointInlets, totJointOutlets,asInlets,asOutlets);
+    if(jointError == CV_ERROR){
+      throw cvException(string("ERROR: Error Creating JOINT " + to_string(loopA) + "\n").c_str());
+    }
+    // Deallocate
+    delete [] asInlets;
+    delete [] asOutlets;
+    asInlets = NULL;
+    asOutlets = NULL;
+  }
+
+  // CREATE MATERIAL
+  // cout << "Creating Materials ... " << endl;
+  int totMaterials = cvOneDOptions::materialName.size();
+  cout << "totMaterials = " << totMaterials << endl;
+  int matError = CV_OK;
+  double doubleParams[3];
+  int matID = 0;
+  string currMatType = "MATERIAL_OLUFSEN";
+  int numParams = 0;
+  for(int loopA=0;loopA<totMaterials;loopA++){
+    if(upper_string(cvOneDOptions::materialType[loopA]) == "OLUFSEN"){
+      currMatType = "MATERIAL_OLUFSEN";
+      numParams = 3;
+    }else{
+      currMatType = "MATERIAL_LINEAR";
+      numParams = 1;
+    }
+    doubleParams[0] = cvOneDOptions::materialParam1[loopA];
+    doubleParams[1] = cvOneDOptions::materialParam2[loopA];
+    doubleParams[2] = cvOneDOptions::materialParam3[loopA];
+    // CREATE MATERIAL
+    matError = oned->CreateMaterial((char*)cvOneDOptions::materialName[loopA].c_str(),
+                                    (char*)currMatType.c_str(),
+                                    cvOneDOptions::materialDensity[loopA],
+                                    cvOneDOptions::materialViscosity[loopA],
+                                    cvOneDOptions::materialExponent[loopA],
+                                    cvOneDOptions::materialPRef[loopA],
+                                    numParams, doubleParams,
+                                    &matID);
+    if(matError == CV_ERROR){
+      throw cvException(string("ERROR: Error Creating MATERIAL " + to_string(loopA) + "\n").c_str());
+    }
+
+  }
+
+  // CREATE DATATABLES
+  // cout << "Creating Data Tables ... " << endl;
+  int totCurves = opts.dataTableName.size();
+  int curveError = CV_OK;
+  for(int loopA=0;loopA<totCurves;loopA++){
+    curveError = oned->CreateDataTable((char*)opts.dataTableName[loopA].c_str(),(char*)opts.dataTableType[loopA].c_str(),opts.dataTableVals[loopA]);
+    if(curveError == CV_ERROR){
+      throw cvException(string("ERROR: Error Creating DATATABLE " + to_string(loopA) + "\n").c_str());
+    }
+  }
+
+  // SEGMENT DATA
+  // cout << "Creating Segments ... " << endl;
+  int segmentError = CV_OK;
+  int totalSegments = opts.segmentName.size();
+  int curveTotals = 0;
+  double* curveTime = NULL;
+  double* curveValue = NULL;
+  string matName;
+  string curveName;
+  int currMatID = 0;
+  int dtIDX = 0;
+  for(int loopA=0;loopA<totalSegments;loopA++){
+
+    // GET MATERIAL
+    matName = opts.segmentMatName[loopA];
+    currMatID = getListIDWithStringKey(matName,cvOneDOptions::materialName);
+    if(currMatID < 0){
+      throw cvException(string("ERROR: Cannot Find Material for key " + matName).c_str());
+    }
+
+    // GET CURVE DATA
+    curveName = opts.segmentDataTableName[loopA];
+
+    if(upper_string(curveName) != "NONE") {
+      dtIDX = getDataTableIDFromStringKey(curveName);
+      curveTotals = cvOneDGlobal::gDataTables[dtIDX]->getSize();
+      curveTime = new double[curveTotals];
+      curveValue = new double[curveTotals];
+      for(int loopA=0;loopA<curveTotals;loopA++){
+        curveTime[loopA] = cvOneDGlobal::gDataTables[dtIDX]->getTime(loopA);
+        curveValue[loopA] = cvOneDGlobal::gDataTables[dtIDX]->getValues(loopA);
+      }
+    }else{
+      curveTotals = 1;
+      curveTime = new double[curveTotals];
+      curveValue = new double[curveTotals];
+      curveTime[0] = 0.0;
+      curveValue[0] = 0.0;
+    }
+    segmentError = oned->CreateSegment((char*)opts.segmentName[loopA].c_str(),
+                                       (long)opts.segmentID[loopA],
+                                       opts.segmentLength[loopA],
+                                       (long)opts.segmentTotEls[loopA],
+                                       (long)opts.segmentInNode[loopA],
+                                       (long)opts.segmentOutNode[loopA],
+                                       opts.segmentInInletArea[loopA],
+                                       opts.segmentInOutletArea[loopA],
+                                       opts.segmentInFlow[loopA],
+                                       currMatID,
+                                       (char*)opts.segmentLossType[loopA].c_str(),
+                                       opts.segmentBranchAngle[loopA],
+                                       opts.segmentUpstreamSegment[loopA],
+                                       opts.segmentBranchSegment[loopA],
+                                       (char*)opts.segmentBoundType[loopA].c_str(),
+                                       curveValue,
+                                       curveTime,
+                                       curveTotals);
+    if(segmentError == CV_ERROR){
+      throw cvException(string("ERROR: Error Creating SEGMENT " + to_string(loopA) + "\n").c_str());
+    }
+    // Deallocate
+    delete [] curveTime;
+    curveTime = NULL;
+    delete [] curveValue;
+    curveValue = NULL;
+  }
+
+  model = cvOneDGlobal::gModelList[cvOneDGlobal::currentModel];
+  prepro();
+
+}
+
+// ======================
+// READ SINGLE MODEL FILE
+// ======================
+void cpl1DType::readModelFile(string inputFile, cvStringVec includedFiles){
+
+  // Message
+  // cout << endl;
+  // cout << "Reading file: " << inputFile.c_str() << "..." << endl;
+
+  // Declare
+  cvStringVec tokenizedString;
+  cvLongVec   tempIntVec;
+  string      matType;
+  cvDoubleVec temp;
+  bool doInclude = false;
+
+  // Declare input File
+  ifstream infile;
+  infile.open(inputFile);
+  if(infile.fail()){
+    throw cvException("ERROR: Input file does not exist.\n");
+  }
+  int lineCount = 1;
+  int reminder = 0;
+  int totSegments = 0;
+
+  // Read Data From File
+  std::string buffer;
+  while (std::getline(infile,buffer)){
+
+    // Trim String
+    buffer = trim_string(buffer);
+
+    // Tokenize String
+    tokenizedString = split_string(buffer, " ,\t");
+    if (tokenizedString.size() == 0) { 
+      continue;
+    }
+
+    // Check for Empty buffer
+    if(!buffer.empty()){
+      // CHECK THE ELEMENT TYPE
+      if(upper_string(tokenizedString[0]) == "MODEL"){
+        //cout << "Found Model.\n");
+        if(opts.modelNameDefined){
+          throw cvException("ERROR: Model name already defined\n");
+        }
+        if(tokenizedString.size() > 2){
+          throw cvException(string("ERROR: Too many parameters for MODEL token. Line " + to_string(lineCount) + "\n").c_str());
+        }else if(tokenizedString.size() < 2){
+          throw cvException(string("ERROR: Not enough parameters for MODEL token. Line " + to_string(lineCount) + "\n").c_str());
+        }
+        try{
+          opts.modelName = tokenizedString[1];
+        }catch(...){
+          throw cvException(string("ERROR: Invalid Model Name. Line " + to_string(lineCount) + "\n").c_str());
+        }
+        opts.modelNameDefined = true;
+      }else if(upper_string(tokenizedString[0]) == "NODE"){
+        // cout << "Found Joint.\n");
+        if(tokenizedString.size() > 5){
+          throw cvException(string("ERROR: Too many parameters for NODE token. Line " + to_string(lineCount) + "\n").c_str());
+        }else if(tokenizedString.size() < 5){
+          throw cvException(string("ERROR: Not enough parameters for NODE token. Line " + to_string(lineCount) + "\n").c_str());
+        }
+        try{
+          // Get Node Name
+          opts.nodeName.push_back(tokenizedString[1]);
+          opts.nodeXcoord.push_back(atof(tokenizedString[2].c_str()));
+          opts.nodeYcoord.push_back(atof(tokenizedString[3].c_str()));
+          opts.nodeZcoord.push_back(atof(tokenizedString[4].c_str()));
+        }catch(...){
+          throw cvException(string("ERROR: Invalid NODE Format. Line " + to_string(lineCount) + "\n").c_str());
+        }
+      }else if(upper_string(tokenizedString[0]) == "JOINT"){
+        // cout << "Found Joint.\n");
+        if(tokenizedString.size() > 5){
+          throw cvException(string("ERROR: Too many parameters for JOINT token. Line " + to_string(lineCount) + "\n").c_str());
+        }else if(tokenizedString.size() < 5){
+          throw cvException(string("ERROR: Not enough parameters for JOINT token. Line " + to_string(lineCount) + "\n").c_str());
+        }
+        try{
+          // Get Joint Name
+          opts.jointName.push_back(tokenizedString[1]);
+//          opts.jointNode.push_back(atof(tokenizedString[2].c_str()));
+          opts.jointNode.push_back(tokenizedString[2]);
+          opts.jointInletName.push_back(tokenizedString[3]);
+          opts.jointOutletName.push_back(tokenizedString[4]);
+        }catch(...){
+          throw cvException(string("ERROR: Invalid JOINT Format. Line " + to_string(lineCount) + "\n").c_str());
+        }
+      }else if(upper_string(tokenizedString[0]) == "JOINTINLET"){
+        // cout << "Found JointInlet.\n");
+        if(tokenizedString.size() < 3){
+          throw cvException(string("ERROR: Not enough parameters for JOINTINLET token. Line " + to_string(lineCount) + "\n").c_str());
+        }
+        try{
+          // Get Joint Name
+          opts.jointInletListNames.push_back(tokenizedString[1]);
+          totSegments = atoi(tokenizedString[2].c_str());
+          opts.jointInletListNumber.push_back(totSegments);
+          tempIntVec.clear();
+          if(totSegments > 0){
+            for(size_t loopA=3;loopA<tokenizedString.size();loopA++){
+              tempIntVec.push_back(atoi(tokenizedString[loopA].c_str()));
+            }
+          }
+          opts.jointInletList.push_back(tempIntVec);
+        }catch(...){
+          throw cvException(string("ERROR: Invalid JOINTINLET Format. Line " + to_string(lineCount) + "\n").c_str());
+        }
+      }else if(upper_string(tokenizedString[0]) == "JOINTOUTLET"){
+        // cout << "Found JointOutlet.\n");
+        if(tokenizedString.size() < 3){
+          throw cvException(string("ERROR: Not enough parameters for JOINTOUTLET token. Line " + to_string(lineCount) + "\n").c_str());
+        }
+        try{
+          // Get Joint Name
+          opts.jointOutletListNames.push_back(tokenizedString[1]);
+          totSegments = atoi(tokenizedString[2].c_str());
+          opts.jointOutletListNumber.push_back(totSegments);
+          tempIntVec.clear();
+          if(totSegments > 0){
+            for(size_t loopA=3;loopA<tokenizedString.size();loopA++){
+              tempIntVec.push_back(atoi(tokenizedString[loopA].c_str()));
+            }
+          }
+          opts.jointOutletList.push_back(tempIntVec);
+        }catch(...){
+          throw cvException(string("ERROR: Invalid JOINTOUTLET Format. Line " + to_string(lineCount) + "\n").c_str());
+        }
+      }else if(upper_string(tokenizedString[0]) == "SEGMENT"){
+        // cout << "Found Segment.\n");
+        if(tokenizedString.size() > 17){
+          throw cvException(string("ERROR: Too many parameters for SEGMENT token. Line " + to_string(lineCount) + "\n").c_str());
+        }else if(tokenizedString.size() < 17){
+          throw cvException(string("ERROR: Not enough parameters for SEGMENT token. Line " + to_string(lineCount) + "\n").c_str());
+        }
+        try{
+          // char* segName,
+          opts.segmentName.push_back(tokenizedString[1]);
+          // long segID,
+          opts.segmentID.push_back(atoi(tokenizedString[2].c_str()));
+          // double  segLen,
+          opts.segmentLength.push_back(atof(tokenizedString[3].c_str()));
+          // long    numEls,
+          opts.segmentTotEls.push_back(atoi(tokenizedString[4].c_str()));
+          // long    inNode,
+          opts.segmentInNode.push_back(atoi(tokenizedString[5].c_str()));
+          // long    outNode,
+          opts.segmentOutNode.push_back(atoi(tokenizedString[6].c_str()));
+          // double  InitialInletArea,
+          opts.segmentInInletArea.push_back(atof(tokenizedString[7].c_str()));
+          // double  InitialOutletArea,
+          opts.segmentInOutletArea.push_back(atof(tokenizedString[8].c_str()));
+          // double  InitialFlow,
+          opts.segmentInFlow.push_back(atof(tokenizedString[9].c_str()));
+          // int matID,
+          opts.segmentMatName.push_back(tokenizedString[10].c_str());
+          // char* lossType,
+          opts.segmentLossType.push_back(tokenizedString[11]);
+          // double branchAngle,
+          opts.segmentBranchAngle.push_back(atof(tokenizedString[12].c_str()));
+          // int upstreamSegment,
+          opts.segmentUpstreamSegment.push_back(atoi(tokenizedString[13].c_str()));
+          // int branchSegment,
+          opts.segmentBranchSegment.push_back(atoi(tokenizedString[14].c_str()));
+          // char* boundType,
+          opts.segmentBoundType.push_back(tokenizedString[15]);
+          // Curve ID Instead of num,value,time
+          // double* value,
+          // double* time,
+          // int num
+          opts.segmentDataTableName.push_back(tokenizedString[16]);
+        }catch(...){
+          throw cvException(string("ERROR: Invalid SEGMENT Format. Line " + to_string(lineCount) + "\n").c_str());
+        }
+      }else if(upper_string(tokenizedString[0]) == "SOLVEROPTIONS"){
+        // cout << "Found Solver Options.\n");
+        if(opts.solverOptionDefined){
+          throw cvException("ERROR: SOLVEROPTIONS already defined\n");
+        }
+        if(tokenizedString.size() > 5){
+          throw cvException(string("ERROR: Too many parameters for SOLVEROPTIONS token. Line " + to_string(lineCount) + "\n").c_str());
+        }else if(tokenizedString.size() < 5){
+          throw cvException(string("ERROR: Not enough parameters for SOLVEROPTIONS token. Line " + to_string(lineCount) + "\n").c_str());
+        }
+        try{
+          // long quadPoints,
+          opts.quadPoints = atoi(tokenizedString[1].c_str());
+          // double conv,
+          opts.convergenceTolerance = atof(tokenizedString[2].c_str());
+          // int useIV,
+          opts.useIV = atoi(tokenizedString[3].c_str());
+          // int usestab
+          opts.useStab = atoi(tokenizedString[4].c_str());
+        }catch(...){
+          throw cvException(string("ERROR: Invalid SOLVEROPTIONS Format. Line " + to_string(lineCount) + "\n").c_str());
+        }
+        opts.solverOptionDefined = true;
+      }else if(upper_string(tokenizedString[0]) == std::string("OUTPUT")){
+        if(tokenizedString.size() > 3){
+          throw cvException(string("ERROR: Too many parameters for OUTPUT token. Line " + to_string(lineCount) + "\n").c_str());
+        }else if(tokenizedString.size() < 2){
+          throw cvException(string("ERROR: Not enough parameters for OUTPUT token. Line " + to_string(lineCount) + "\n").c_str());
+        }
+        // Output Type
+        if(upper_string(tokenizedString[1]) == "TEXT"){
+          cvOneDOptions::outputType = OutputTypeScope::OUTPUT_TEXT;
+        }else if(upper_string(tokenizedString[1]) == "VTK"){
+          cvOneDOptions::outputType = OutputTypeScope::OUTPUT_VTK;
+        }else if(upper_string(tokenizedString[1]) == "BOTH"){
+          cvOneDOptions::outputType = OutputTypeScope::OUTPUT_BOTH;
+        }else{
+          throw cvException("ERROR: Invalid OUTPUT Type.\n");
+        }
+        if(tokenizedString.size() > 2){
+          cvOneDOptions::vtkOutputType = atoi(tokenizedString[2].c_str());
+          if(cvOneDOptions::vtkOutputType > 1){
+            throw cvException("ERROR: Invalid OUTPUT VTK Type.\n");
+          }
+        }
+      }else if(upper_string(tokenizedString[0]) == std::string("DATATABLE")){
+        // cout << "Found Data Table.\n");
+        try{
+
+          // Get Datatable Name
+          opts.dataTableName.push_back(tokenizedString[1]);
+          // Add the type of the datatable
+          opts.dataTableType.push_back(tokenizedString[2]);
+
+          bool foundEnd = false;
+          temp.clear();
+          while(!foundEnd){
+            std::getline(infile,buffer);
+            lineCount++;
+            // Trim String
+            buffer = trim_string(buffer);
+            // Tokenize String
+            tokenizedString = split_string(buffer, " ,\t");
+            if (tokenizedString.size() == 0) { 
+              break;
+            }
+            // Check for Empty buffer
+            if(!buffer.empty()){
+              if(upper_string(tokenizedString[0]) == std::string("ENDDATATABLE")){
+                foundEnd = true;
+              }else{
+                for(int loopA=0;loopA<tokenizedString.size();loopA++){
+                  temp.push_back(atof(tokenizedString[loopA].c_str()));
+                }
+              }
+            }
+          }
+          // Add all the values to the option array
+          opts.dataTableVals.push_back(temp);
+        }catch(...){
+          throw cvException(string("ERROR: Invalid DATATABLE Format. Line " + to_string(lineCount) + "\n").c_str());
+        }
+      }else if(upper_string(tokenizedString[0]) == std::string("MATERIAL")){
+        // cout << "Found Material.\n");
+        if(tokenizedString.size() > 10){
+          throw cvException(string("ERROR: Too many parameters for MATERIAL token. Line " + to_string(lineCount) + "\n").c_str());
+        }else if(tokenizedString.size() < 8){
+          throw cvException(string("ERROR: Not enough parameters for MATERIAL token. Line " + to_string(lineCount) + "\n").c_str());
+        }
+        try{
+          // Material Name
+          cvOneDOptions::materialName.push_back(tokenizedString[1]);
+          // Material Type
+          matType = tokenizedString[2];
+          cvOneDOptions::materialType.push_back(matType);
+          // Density
+          cvOneDOptions::materialDensity.push_back(atof(tokenizedString[3].c_str()));
+          // Dynamic Viscosity
+          cvOneDOptions::materialViscosity.push_back(atof(tokenizedString[4].c_str()));
+          // Reference Pressure
+          cvOneDOptions::materialPRef.push_back(atof(tokenizedString[5].c_str()));
+          // Material Exponent
+          cvOneDOptions::materialExponent.push_back(atof(tokenizedString[6].c_str()));
+          // Extra Material Parameters
+          if(upper_string(matType) == "OLUFSEN"){
+            cvOneDOptions::materialParam1.push_back(atof(tokenizedString[7].c_str()));
+            cvOneDOptions::materialParam2.push_back(atof(tokenizedString[8].c_str()));
+            cvOneDOptions::materialParam3.push_back(atof(tokenizedString[9].c_str()));
+          }else if(upper_string(matType) == "LINEAR"){
+            cvOneDOptions::materialParam1.push_back(atof(tokenizedString[7].c_str()));
+            cvOneDOptions::materialParam2.push_back(0.0);
+            cvOneDOptions::materialParam3.push_back(0.0);
+          }else{
+            throw cvException(string("ERROR: Invalid MATERIAL Type. Line " + to_string(lineCount) + "\n").c_str());
+          }
+        }catch(...){
+          throw cvException("ERROR: Invalid MATERIAL Format.\n");
+        }
+      }else if(upper_string(tokenizedString[0]) == std::string("INCLUDE")){
+        // Check if the file is active
+        if(upper_string(tokenizedString[2]) == "TRUE"){
+          doInclude = true;
+        }else if(upper_string(tokenizedString[2]) == "FALSE"){
+          doInclude = false;
+        }else{
+          throw cvException(string("ERROR: Invalid INCLUDE switch format. Line " + to_string(lineCount) + "\n").c_str());
+        }
+        try{
+          // If active include file in list
+          if(doInclude){
+            includedFiles.push_back(tokenizedString[1]);
+          }
+        }catch(...){
+          throw cvException(string("ERROR: Invalid INCLUDE Format. Line " + to_string(lineCount) + "\n").c_str());
+        }
+      }else if((tokenizedString.size() == 0)||(tokenizedString[0].at(0) == '#')||(tokenizedString[0].find_first_not_of(' ') == std::string::npos)){
+        // cout << "Found Blank.\n");
+        // COMMENT OR BLANK LINE: DO NOTHING
+      }else{
+        // TOKEN NOT RECOGNIZED
+        throw cvException(string("ERROR: Invalid Token in input file, line: "  + to_string(lineCount) + "\n").c_str());
+      }
+    }
+    // cout << "Line: %d, Buffer: %s\n",lineCount,buffer.c_str());
+    // getchar();
+
+    // Increment Line Count
+    lineCount++;
+  }
+  // Close File
+  infile.close();
+}
+
+// ====================
+// READ MODEL FROM FILE
+// ====================
+void cpl1DType::readModel(string inputFile){
+
+  // List of included Files
+  cvStringVec includedFiles;
+  string currentFile;
+
+  // Read First File
+  readModelFile(inputFile, includedFiles);
+
+  //Read Nested Files
+  while(includedFiles.size() > 0){
+
+    // Get the first file Name
+    currentFile = includedFiles[0];
+    // Delete the First element
+    includedFiles.erase(includedFiles.begin());
+    // Read the file and store new included files
+    readModelFile(inputFile, includedFiles);
+  }
+}

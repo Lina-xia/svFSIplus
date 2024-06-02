@@ -20,41 +20,40 @@ class cpl1DType
 {
   public:
 
-    // static double dt;  //comMod.dt
-    // static double saveIncr;  //Number of steps between saving results, comMod.saveIncr
-    // static double nTS;   //Number of timesteps, comMod.nTS
-
     //静态变量表示所有的出口共享这些数据
-    static int ASCII;  //VTK输出格式
     static std::string OutputFile;
-    static bool path;
+    static bool        path;
+    static double      dt;  //comMod.dt
+    static int         saveIncr;  //comMod.saveIncr
+    static int         maxStep;   //comMod.nTS
+    static int         ASCII;               //VTK输出格式
+
 
     //非静态变量，具有出口特异性
-    std::string outletName;
-    std::string inputFileName;
-
-    double flowRateEachTime = 0.0;
-    double preFrom1DEachTime = 0.0;
-    int    q = 1;  // Global Solution Loop
-    double currentTime;
-    bool   wasSet = false;
-
     cvOneDOptions opts;
-    // Pointer to the Model
-    cvOneDModel *model;
+    cvOneDModel   *model;  // Pointer to the Model
+    std::string   outletName;
+    std::string   inputFileName;
+    double        flowRateEachTime = 0.0;
+    double        preFrom1DEachTime = 0.0;
+    int           q = 1;  // Global Solution Loop
+    bool          wasSet = false;
 
     // Solve the blood flow problem
     void prepro(void);
 	  void QuerryModelInformation(void);
     void GenerateSolution(void);
     void Nonlinear_iter(int step);
+    int  getDataTableIDFromStringKey(string key);
+    void createModel();
+    void readModelFile(string inputFile, cvStringVec includedFiles);
+    void readModel(string inputFile);
 
     // Result Output
     void postprocess_Text(std::string& path);
     void postprocess_VTK_XML3D_ONEFILE(std::string& path);
     void postprocess_VTK_XML3D_MULTIPLEFILES(std::string& path);
-
-    //一些没用过的函数
+    
     // Find Segment index given the ID
     int getSegmentIndex(int segID);
     // Get the solution;

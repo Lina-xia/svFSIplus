@@ -31,15 +31,22 @@
 
 #include "cvOneDOptions.h"
 
-double cvOneDOptions::dt = 0;
-int   cvOneDOptions::saveIncr = 0;  //incre
-int   cvOneDOptions::maxStep = 0;
-int   cvOneDOptions::quadPoints = 2;
+int    cvOneDOptions::quadPoints = 2;
 double cvOneDOptions::convergenceTolerance = 1.0e-8;
 int    cvOneDOptions::useIV = 1;
 int    cvOneDOptions::useStab = 1;
 int    cvOneDOptions::outputType = 0; // Default Text Output
 int    cvOneDOptions::vtkOutputType = 0; // Default Multiple Files
+
+cvStringVec cvOneDOptions::materialName = {};
+cvStringVec cvOneDOptions::materialType = {};
+cvDoubleVec cvOneDOptions::materialDensity;
+cvDoubleVec cvOneDOptions::materialViscosity;
+cvDoubleVec cvOneDOptions::materialPRef;
+cvDoubleVec cvOneDOptions::materialExponent;
+cvDoubleVec cvOneDOptions::materialParam1;
+cvDoubleVec cvOneDOptions::materialParam2;
+cvDoubleVec cvOneDOptions::materialParam3;
 
 // CONSTRUCTOR
 cvOneDOptions::cvOneDOptions(){

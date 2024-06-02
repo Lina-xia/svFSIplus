@@ -74,15 +74,15 @@ class cvOneDOptions{
     cvLongMat   jointOutletList;
 
     // MATERIAL
-    cvStringVec materialName;
-    cvStringVec materialType;
-    cvDoubleVec materialDensity;
-    cvDoubleVec materialViscosity;
-    cvDoubleVec materialPRef;
-    cvDoubleVec materialExponent;
-    cvDoubleVec materialParam1;
-    cvDoubleVec materialParam2;
-    cvDoubleVec materialParam3;
+    static cvStringVec materialName;
+    static cvStringVec materialType;
+    static cvDoubleVec materialDensity;
+    static cvDoubleVec materialViscosity;
+    static cvDoubleVec materialPRef;
+    static cvDoubleVec materialExponent;
+    static cvDoubleVec materialParam1;
+    static cvDoubleVec materialParam2;
+    static cvDoubleVec materialParam3;
 
     // DATATABLE
     cvStringVec dataTableName;
@@ -107,12 +107,8 @@ class cvOneDOptions{
     cvStringVec segmentBoundType;
     cvStringVec segmentDataTableName;
 
-    // SOLVER OPTIONS，所有outlet共享
-    //读取三维的
-    static double dt;  //dt
-    static int   saveIncr;  //incre
-    static int   maxStep;
-    static int   quadPoints;
+    // SOLVER OPTIONS
+    static int    quadPoints;
     static double convergenceTolerance;
     static int    useIV;
     static int    useStab;

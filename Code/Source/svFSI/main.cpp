@@ -60,9 +60,6 @@
 #include <iostream>
 #include <cmath>
 #include <fstream>
-
-#include "cvOneDGlobal.h"
-#include "cvOneD.h"
 #include <unistd.h> // 包含 chdir 函数
 
 /// @brief Read in a solver XML file and all mesh and BC data.  
@@ -95,13 +92,13 @@ void Couple1D(Simulation* simulation)
   using namespace consts;
   auto& com_mod = simulation->com_mod;
   auto& cm_mod = simulation->cm_mod;
+  auto& cm = com_mod.cm;
 
   #define debug_Couple1D
   #ifdef debug_Couple1D
   DebugMsg dmsg(__func__, com_mod.cm.idcm());
   #endif
 
-  auto& cm = com_mod.cm;
   for (int iEq = 0; iEq < com_mod.nEq; iEq++) {
     auto& eq = com_mod.eq[iEq];
     if (eq.phys == EquationType::phys_fluid) {
@@ -111,29 +108,33 @@ void Couple1D(Simulation* simulation)
           auto& Fa = com_mod.msh[bc.iM].fa[bc.iFa];
           auto& cpl1D = bc.cpl1D;
 
-          // double flowRate = 0.0;
-          // for (int a = 0; a < Fa.nNo; a++){
-          //   int Ac = Fa.gN(a);  //返回全局编号
-          //   flowRate += sqrt(com_mod.Yn(s,Ac)^2 +  com_mod.Yn(s+1,Ac)^2 +  com_mod.Yn(s+2,Ac)^2);
-          // }
-          // cpl1D.flowRateEachTime = flowRate / Fa.nNo;
+          //第一个时间步预处理，所有的核都执行，因为一个边界的读取的SOLVEROPTIONS、MATERIAL、OUTPUT数据要用到其它边界上
+          if (com_mod.cTS == 1){
 
-          cpl1D.flowRateEachTime = 5;
+            cpl1DType::dt = com_mod.dt;
+            cpl1DType::saveIncr = com_mod.saveIncr;
+            cpl1DType::maxStep = com_mod.nTS;
+
+            cpl1D.readModel(cpl1D.inputFileName);
+            cpl1D.opts.check();
+
+            //怎么判断在接口处三维一维是否相接
+            cpl1D.createModel();
+
+            cpl1D.GenerateSolution();
+          }
 
           if (Fa.nNo != 0){
-            //第一个时间步预处理
-            if (com_mod.cTS == 1){
-              cvOneDOptions::dt = com_mod.dt;
-              cvOneDOptions::saveIncr = com_mod.saveIncr;
-              cvOneDOptions::maxStep = com_mod.nTS;
 
-              readModel(cpl1D.inputFileName, &cpl1D.opts);
-              cpl1D.opts.check();
-
-              //怎么判断接口三维一维是否一致？？
-              createModel(cpl1D);
-              cpl1D.GenerateSolution();
+            double flowRate = 0.0;
+            for (int a = 0; a < Fa.nNo; a++){
+              int Ac = Fa.gN(a);  //返回全局编号
+              int s = eq.s;
+              flowRate += sqrt(pow(com_mod.Yn(s, Ac), 2) +
+                              pow(com_mod.Yn(s+1, Ac), 2) +
+                              pow(com_mod.Yn(s+2, Ac), 2));
             }
+            cpl1D.flowRateEachTime = flowRate / Fa.nNo;
 
             #ifdef debug_Couple1D
               dmsg.banner();
@@ -142,8 +143,7 @@ void Couple1D(Simulation* simulation)
               dmsg << ">>> Fa.nNo: " << Fa.nNo;
               dmsg << ">>> flowRateEachTime: " << cpl1D.flowRateEachTime;
             #endif
-   
-            // 一维非线性迭代
+            
             cpl1D.Nonlinear_iter(com_mod.cTS);
             
             // 每个点的法向量其实有细微出入, 取平均值带入
@@ -163,8 +163,9 @@ void Couple1D(Simulation* simulation)
             dmsg << ">>> nV_age: " << nv_age;
             dmsg << ">>> h: " << bc.h;
             #endif
+
             //最后一个时间步后处理
-            if (com_mod.cTS == cvOneDOptions::maxStep){ 
+            if (com_mod.cTS == cpl1DType::maxStep){ 
               // Some Post Processing
               std::string path = simulation->chnl_mod.appPath + "/";
 

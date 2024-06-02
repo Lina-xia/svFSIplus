@@ -88,9 +88,8 @@ cvOneDMthModelBase::~cvOneDMthModelBase(){
 }
 
 void cvOneDMthModelBase::TimeUpdate(double pTime, double deltaT){
-  previousTime = pTime;
+  currentTime = pTime;
   deltaTime = deltaT;
-  currentTime = previousTime + deltaTime;
 }
 
 void cvOneDMthModelBase::GetNodalEquationNumbers(long locNode, long* eqNumbers,long ithSubdomain){

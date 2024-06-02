@@ -203,7 +203,7 @@ void cvOneDMthSegmentModel::N_MinorLoss(long ith, double* N_vec){
   // cout << " -N " << -N << " Q(1) :"<< Q[1] << endl;
 }
 
-
+//函数小改
 void cvOneDMthSegmentModel::FormElement_FD(long element, long ith, cvOneDFEAVector* elementVector, cvOneDDenseMatrix* elementMatrix){
 	// number of unknowns per element
 	const int n_eq = 4;
@@ -218,10 +218,12 @@ void cvOneDMthSegmentModel::FormElement_FD(long element, long ith, cvOneDFEAVect
 	// unused element matrix
 	cvOneDDenseMatrix elementMatrix_dummy(4, "eLhsMatrix_dummy");
 	elementMatrix_dummy.SetEquationNumbers(eqNumbers);
+	elementMatrix_dummy.Clear();
 	
 	// output element matrix
 	elementMatrix->SetEquationNumbers(eqNumbers);
 	elementMatrix->Clear();
+	elementVector->Clear();
 	
 	// calculate residual (and tangent matrix - unused)
 	FormElement(element, ith, elementVector, &elementMatrix_dummy, true, false);
@@ -279,6 +281,7 @@ void cvOneDMthSegmentModel::FormElement(long element,
 	// get material properties
 	strcpy(propName,"density");
 	double density = material->GetProperty(propName);
+	std::cout << "density = " << density << std::endl; //查看material信息是否完整
 	strcpy(propName,"delta");
 	double delta = material->GetProperty(propName);
 	strcpy(propName,"kinematic viscosity");
