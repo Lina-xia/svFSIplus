@@ -103,7 +103,6 @@ class cmType {
     void bcast(const CmMod& cm_mod, double* data) const;
     void bcast(const CmMod& cm_mod, std::string& data) const;
 
-    void bcast(const CmMod& cm_mod, std::vector<std::string>& data) const;
     void bcast(const CmMod& cm_mod, std::vector<bool>& data) const;
     void bcast(const CmMod& cm_mod, std::vector<double>& data) const;
 

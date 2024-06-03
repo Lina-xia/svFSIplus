@@ -555,8 +555,6 @@ void dist_bc(ComMod& com_mod, const CmMod& cm_mod, const cmType& cm, bcType& lBc
   DebugMsg dmsg(__func__, com_mod.cm.idcm());
   dmsg.banner();
   #endif
-  DebugMsg dmsg(__func__, com_mod.cm.idcm());
-  dmsg.banner();
 
   int task_id = cm.idcm();
   bool is_slave = cm.slv(cm_mod);
@@ -613,7 +611,7 @@ void dist_bc(ComMod& com_mod, const CmMod& cm_mod, const cmType& cm, bcType& lBc
 
     int size = cpl1DType::materialDensity.size();
     cm.bcast(cm_mod, &size);
-    dmsg << "size = " << size << endl;
+    // dmsg << "size = " << size << endl;
     if (task_id != cm_mod.master) {
       // 其他进程缓冲区大小与主进程相同
       cpl1DType::materialName.resize(size);
@@ -626,8 +624,10 @@ void dist_bc(ComMod& com_mod, const CmMod& cm_mod, const cmType& cm, bcType& lBc
       cpl1DType::materialParam2.resize(size);
       cpl1DType::materialParam3.resize(size);
     }
-    cm.bcast(cm_mod, cpl1DType::materialName);
-    cm.bcast(cm_mod, cpl1DType::materialType);
+    for (int i = 0; i < size; i++){
+      cm.bcast(cm_mod, cpl1DType::materialName[i]);
+      cm.bcast(cm_mod, cpl1DType::materialType[i]);
+    }
     cm.bcast(cm_mod, cpl1DType::materialDensity);
     cm.bcast(cm_mod, cpl1DType::materialViscosity);
     cm.bcast(cm_mod, cpl1DType::materialPRef);
@@ -635,8 +635,8 @@ void dist_bc(ComMod& com_mod, const CmMod& cm_mod, const cmType& cm, bcType& lBc
     cm.bcast(cm_mod, cpl1DType::materialParam1);
     cm.bcast(cm_mod, cpl1DType::materialParam2);
     cm.bcast(cm_mod, cpl1DType::materialParam3);
-    dmsg << "materialName = " << cpl1DType::materialName[0] << endl;
-
+    // dmsg << "materialName0 = " << cpl1DType::materialName[0] << endl;
+    // dmsg << "materialName1 = " << cpl1DType::materialName[1] << endl;
   }
   
   // Communicating time-dependent BC data

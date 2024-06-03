@@ -1712,6 +1712,7 @@ void cpl1DType::createModel(){
     // GET MATERIAL
     matName = opts.segmentMatName[loopA];
     currMatID = getListIDWithStringKey(matName,cpl1DType::materialName);
+    // cout << "matName = " << matName << endl;
     if(currMatID < 0){
       throw cvException(string("ERROR: Cannot Find Material for key " + matName).c_str());
     }

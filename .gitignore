@@ -32,7 +32,9 @@ build
 change.sh
 tests/
 my_test/
-branch/
 branch_outlet1/
 build_csparse/
 build_debug/
+
+#branch例子
+branch/*.out

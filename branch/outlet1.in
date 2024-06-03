@@ -1,0 +1,81 @@
+# ================================
+# outlet1 MODEL - UNITS IN CGS
+# ================================
+
+# ==========
+# MODEL CARD
+# ==========
+# - Name of the model (string)
+MODEL outlet1_
+
+### DO NOT CHANGE THIS SECTION - generated automatically
+#
+# ==========
+# NODE CARD
+# ==========
+# - Node Name (double)
+# - Node X Coordinate (double)
+# - Node Y Coordinate (double)
+# - Node Z Coordinate (double)
+
+NODE 0 20.581170654296875 5.581779479980469 0.00008968732436187565
+NODE 1 24.99992218017578 10.00103530883789 0.00012393699726089835
+
+# ============
+# SEGMENT CARD
+# ============
+# - Segment Name (string)
+# - Segment ID (int)
+# - Segment Length (double)
+# - Total Finite Elements in Segment (int)
+# - Segment Inlet Node (int)
+# - Segment Outlet Node (int)
+# - Segment Inlet Area (double)
+# - Segment Outlet Area (double)
+# - Segment Inflow Value (double) = 0.0
+# - Segment Material (string) = MAT1
+# - Type of Loss (string - 'NONE','STENOSIS','BRANCH_THROUGH_DIVIDING','BRANCH_SIDE_DIVIDING','BRANCH_THROUGH_CONVERGING',
+#                          'BRANCH_SIDE_CONVERGING','BIFURCATION_BRANCH')
+# - Branch Angle (double)
+# - Upstream Segment ID (int)
+# - Branch Segment ID (int)
+# - Boundary Condition Type (string - 'NOBOUND','PRESSURE','AREA','FLOW','RESISTANCE','RESISTANCE_TIME','PRESSURE_WAVE',
+#                                     'WAVE','RCR','CORONARY','IMPEDANCE','PULMONARY')
+# - Data Table Name (string)
+
+SEGMENT seg0 0 6.249424907144678 20 0 1 4.51 4.51 0.0 MAT1 NONE 0.0 0 0 RCR RCR_0
+
+DATATABLE RCR_0 LIST
+0.0 89.9
+0.0 1.16e-05
+0.0 1640
+0.0 0.0
+ENDDATATABLE
+
+# =============
+# MATERIAL CARD
+# =============
+# - Material Name (string)
+# - Material Type (string - 'LINEAR','OLUFSEN')
+# - Material Density (double)
+# - Material Viscosity (double)
+# - Material PRef (double)
+# - Material Exponent (double)
+# - Material Parameter 1 (double)
+# - Material Parameter 2 (double)
+# - Material Parameter 3 (double)
+
+MATERIAL MAT1 OLUFSEN 1.06 0.04 0.0 1.0 20000000.0 -22.5267 865000.0
+# MATERIAL MAT2 OLUFSEN 2 0.04 0.0 1.0 20000000.0 -22.5267 865000.0
+
+# ==================
+# SOLVEROPTIONS CARD
+# ==================
+# - Number of quadrature points for finite elements (int), 
+# - Convergence tolerance (double), 
+# - Formulation Type (int - 0 Advective, 1 Conservative), 
+# - Stabilization (int - 0 No stabilization, 1 With stabilization)
+
+SOLVEROPTIONS  2 1.0e-5 1 1
+
+OUTPUT TEXT
