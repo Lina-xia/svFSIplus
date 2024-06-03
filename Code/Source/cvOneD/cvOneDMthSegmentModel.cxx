@@ -36,7 +36,7 @@
 
 # include "cvOneDMthSegmentModel.h"
 # include "cvOneDGlobal.h"
-# include "cvOneDOptions.h"
+# include "cpl1DType.h"
 
 // stabilization parameter blows up if you have a very small or zero
 // kinematic viscosity
@@ -77,7 +77,7 @@ void cvOneDMthSegmentModel::FormNewton(cvOneDFEAMatrix* lhsMatrix, cvOneDFEAVect
 //			FormElement(element, i, &elementVector, &elementMatrix, true, true);
 
 			// finite difference jacobian
-			FormElement_FD(element, i, &elementVector, &elementMatrix);  //这里有问题
+			FormElement_FD(element, i, &elementVector, &elementMatrix);
 			rhsVector->Add(elementVector);
 			lhsMatrix->Add(elementMatrix);
 		}
@@ -203,7 +203,7 @@ void cvOneDMthSegmentModel::N_MinorLoss(long ith, double* N_vec){
   // cout << " -N " << -N << " Q(1) :"<< Q[1] << endl;
 }
 
-//函数小改
+
 void cvOneDMthSegmentModel::FormElement_FD(long element, long ith, cvOneDFEAVector* elementVector, cvOneDDenseMatrix* elementMatrix){
 	// number of unknowns per element
 	const int n_eq = 4;
@@ -218,12 +218,10 @@ void cvOneDMthSegmentModel::FormElement_FD(long element, long ith, cvOneDFEAVect
 	// unused element matrix
 	cvOneDDenseMatrix elementMatrix_dummy(4, "eLhsMatrix_dummy");
 	elementMatrix_dummy.SetEquationNumbers(eqNumbers);
-	elementMatrix_dummy.Clear();
 	
 	// output element matrix
 	elementMatrix->SetEquationNumbers(eqNumbers);
 	elementMatrix->Clear();
-	elementVector->Clear();
 	
 	// calculate residual (and tangent matrix - unused)
 	FormElement(element, ith, elementVector, &elementMatrix_dummy, true, false);
@@ -281,7 +279,7 @@ void cvOneDMthSegmentModel::FormElement(long element,
 	// get material properties
 	strcpy(propName,"density");
 	double density = material->GetProperty(propName);
-	std::cout << "density = " << density << std::endl; //查看material信息是否完整
+	// std::cout << "density = " << density << std::endl; //查看material信息是否匹配
 	strcpy(propName,"delta");
 	double delta = material->GetProperty(propName);
 	strcpy(propName,"kinematic viscosity");
@@ -378,7 +376,7 @@ void cvOneDMthSegmentModel::FormElement(long element,
 		double IntegralpS = material->GetIntegralpS( U[0], z); //0.0;
 		double IntegralpD2S = 0;
 
-		if(cvOneDOptions::useIV==1) {
+		if(cpl1DType::useIV==1) {
 			IntegralpD2S = material->GetIntegralpD2S( U[0], z); //0.0;
 		}
 
@@ -428,7 +426,7 @@ void cvOneDMthSegmentModel::FormElement(long element,
 		double modA[4];
 		double modC[4];
 
-		if(cvOneDOptions::useStab==1){
+		if(cpl1DType::useStab==1){
 			GetModulus(A, modA);
 			if(kinViscosity < SMALL_KINEMATIC_VISCOSITY){
 				modC[0] = 0;
@@ -453,7 +451,7 @@ void cvOneDMthSegmentModel::FormElement(long element,
 			tau[1] = -tau[1]/det;
 			tau[2] = -tau[2]/det;
 			tau[3] =  temp/det;
-		}// end cvOneDOptions::useStab
+		}// end cpl1DType::useStab
 
 		for( int a = 0; a < numberOfNodes; a++){
 			if (get_vec){
@@ -461,7 +459,7 @@ void cvOneDMthSegmentModel::FormElement(long element,
 				double rDG1=0.0;
 				double rDG2=0.0;
 
-				if(cvOneDOptions::useIV){
+				if(cpl1DType::useIV){
 					// IV formulation 01-31-03
 					rDG1 = deltaTime*(DxShape[a]*F1+shape[a]*GF1)-shape[a]*(U[0]-Un[0]);
 					// GF2 contains NNN
@@ -478,7 +476,7 @@ void cvOneDMthSegmentModel::FormElement(long element,
 				double rGLS2 = 0.0;
 
 
-				if (cvOneDOptions::useStab == 1){
+				if (cpl1DType::useStab == 1){
 					// GLS terms
 					// create an auxiliary matrix to handle some of the terms
 					double auxa[4];
@@ -520,7 +518,7 @@ void cvOneDMthSegmentModel::FormElement(long element,
 				for( int b = 0; b < numberOfNodes; b++){
 
 					// DG terms
-					if(cvOneDOptions::useIV == 1){
+					if(cpl1DType::useIV == 1){
 						// IV's formulation 01-18-03
 						k11 = deltaTime*(shape[a]*CF11*shape[b])-shape[a]*shape[b];
 						k12 = deltaTime*(A12*shape[b]*DxShape[a]);
@@ -534,7 +532,7 @@ void cvOneDMthSegmentModel::FormElement(long element,
 						k22 = deltaTime*(shape[a]*A22*DxShape[b]+DxShape[a]*(K22)*DxShape[b]-shape[a]*C22*shape[b]) + shape[a]*shape[b];
 					}
 
-					if(cvOneDOptions::useStab == 1){
+					if(cpl1DType::useStab == 1){
 						// GLS terms
 						// Create an auxiliary matrix to handle some of the terms
 						double auxa[4];
@@ -580,7 +578,7 @@ void cvOneDMthSegmentModel::FormElement(long element,
 			}
 		}
 
-		if(cvOneDOptions::useIV){
+		if(cpl1DType::useIV){
 
 			//Inlet flux term (at z=z_inlet) which is the linearized F-KU IV 01-28-03
 			if (element == 0){
@@ -638,7 +636,7 @@ void cvOneDMthSegmentModel::FormElement(long element,
 	}
 
 	if (get_vec){
-		if(cvOneDOptions::useIV){
+		if(cpl1DType::useIV){
 			//Inlet flux term (at z=z_inlet) which is the linearized F-KU
 			if(element == 0){
 				long node = 0;

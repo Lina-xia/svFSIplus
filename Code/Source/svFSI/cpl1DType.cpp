@@ -37,14 +37,31 @@
 
 using namespace std;
 
-
 // Static Declarations...
+bool      cpl1DType::IfCout = false;
 double    cpl1DType::dt = 0;
 int       cpl1DType::saveIncr = 0;
 int       cpl1DType::maxStep = 0;
 int       cpl1DType::ASCII = 1;
+int       cpl1DType::quadPoints = 2;
+double    cpl1DType::convergenceTolerance = 1.0e-8;
+int       cpl1DType::useIV = 1;
+int       cpl1DType::useStab = 1;
+int       cpl1DType::outputType = 0; // Default Text Output
+int       cpl1DType::vtkOutputType = 0; // Default Multiple Files
+bool      cpl1DType::solverOptionDefined = false;
 string    cpl1DType::OutputFile = string("OneDSolver.out");
-bool      cpl1DType::path = 0;
+
+vector<string> cpl1DType::materialName = {};
+vector<string> cpl1DType::materialType = {};
+vector<double> cpl1DType::materialDensity;
+vector<double> cpl1DType::materialViscosity;
+vector<double> cpl1DType::materialPRef;
+vector<double> cpl1DType::materialExponent;
+vector<double> cpl1DType::materialParam1;
+vector<double> cpl1DType::materialParam2;
+vector<double> cpl1DType::materialParam3;
+
 
 // ==================
 // WRITE TEXT RESULTS
@@ -996,7 +1013,7 @@ void cpl1DType::DefineMthModels(){
   // cout << "Subdomain No. "<<subdomainList.size() << endl;
   // cout << "Joint No. "<< jointList.size() << endl;
   // cout << "Outlet No. "<< outletList.size() << endl;
-  cvOneDMthSegmentModel* segM = new cvOneDMthSegmentModel(subdomainList, jointList, outletList, cvOneDOptions::quadPoints);
+  cvOneDMthSegmentModel* segM = new cvOneDMthSegmentModel(subdomainList, jointList, outletList, quadPoints);
 
   cvOneDMthBranchModel* branchM = new cvOneDMthBranchModel(subdomainList, jointList, outletList);
   AddOneModel(segM);
@@ -1276,7 +1293,7 @@ void cpl1DType::CalcInitProps(long ID){
 void cpl1DType::GenerateSolution(){
 
   // // Print the formulation used
-  // if(cvOneDOptions::useIV){
+  // if(cpl1DType::useIV){
   //   cout << "Using Conservative Form ..." << endl;
   // }else{
   //   cout << "Using Advective Form ..." << endl;
@@ -1383,7 +1400,7 @@ void cpl1DType::Nonlinear_iter(int step){
     }
     
     // Check Newton-Raphson Convergence
-    if((currentTime != dt || (currentTime == dt && iter != 0)) && normf < cvOneDOptions::convergenceTolerance && norms < cvOneDOptions::convergenceTolerance){
+    if((currentTime != dt || (currentTime == dt && iter != 0)) && normf < cpl1DType::convergenceTolerance && norms < cpl1DType::convergenceTolerance){
       outFile << "----------------------------------------------------" << endl;
       break;
     }
@@ -1634,31 +1651,32 @@ void cpl1DType::createModel(){
 
   // CREATE MATERIAL
   // cout << "Creating Materials ... " << endl;
-  int totMaterials = cvOneDOptions::materialName.size();
-  cout << "totMaterials = " << totMaterials << endl;
+  int totMaterials = cpl1DType::materialName.size();
+  // cout << "totMaterials = " << totMaterials << endl;
+  //在每个处理cpl1D的进程上都创建所有的MATERIAL以便使用
   int matError = CV_OK;
   double doubleParams[3];
   int matID = 0;
-  string currMatType = "MATERIAL_OLUFSEN";
+  string currMatType = "MATERIAL";
   int numParams = 0;
-  for(int loopA=0;loopA<totMaterials;loopA++){
-    if(upper_string(cvOneDOptions::materialType[loopA]) == "OLUFSEN"){
+  for(int loopA = 0;loopA<totMaterials;loopA++){
+    if(upper_string(cpl1DType::materialType[loopA]) == "OLUFSEN"){
       currMatType = "MATERIAL_OLUFSEN";
       numParams = 3;
     }else{
       currMatType = "MATERIAL_LINEAR";
       numParams = 1;
     }
-    doubleParams[0] = cvOneDOptions::materialParam1[loopA];
-    doubleParams[1] = cvOneDOptions::materialParam2[loopA];
-    doubleParams[2] = cvOneDOptions::materialParam3[loopA];
+    doubleParams[0] = cpl1DType::materialParam1[loopA];
+    doubleParams[1] = cpl1DType::materialParam2[loopA];
+    doubleParams[2] = cpl1DType::materialParam3[loopA];
     // CREATE MATERIAL
-    matError = oned->CreateMaterial((char*)cvOneDOptions::materialName[loopA].c_str(),
+    matError = oned->CreateMaterial((char*)cpl1DType::materialName[loopA].c_str(),
                                     (char*)currMatType.c_str(),
-                                    cvOneDOptions::materialDensity[loopA],
-                                    cvOneDOptions::materialViscosity[loopA],
-                                    cvOneDOptions::materialExponent[loopA],
-                                    cvOneDOptions::materialPRef[loopA],
+                                    cpl1DType::materialDensity[loopA],
+                                    cpl1DType::materialViscosity[loopA],
+                                    cpl1DType::materialExponent[loopA],
+                                    cpl1DType::materialPRef[loopA],
                                     numParams, doubleParams,
                                     &matID);
     if(matError == CV_ERROR){
@@ -1693,7 +1711,7 @@ void cpl1DType::createModel(){
 
     // GET MATERIAL
     matName = opts.segmentMatName[loopA];
-    currMatID = getListIDWithStringKey(matName,cvOneDOptions::materialName);
+    currMatID = getListIDWithStringKey(matName,cpl1DType::materialName);
     if(currMatID < 0){
       throw cvException(string("ERROR: Cannot Find Material for key " + matName).c_str());
     }
@@ -1753,7 +1771,7 @@ void cpl1DType::createModel(){
 // ======================
 // READ SINGLE MODEL FILE
 // ======================
-void cpl1DType::readModelFile(string inputFile, cvStringVec includedFiles){
+void cpl1DType::readModelFile(cvStringVec includedFiles){
 
   // Message
   // cout << endl;
@@ -1834,7 +1852,7 @@ void cpl1DType::readModelFile(string inputFile, cvStringVec includedFiles){
         try{
           // Get Joint Name
           opts.jointName.push_back(tokenizedString[1]);
-//          opts.jointNode.push_back(atof(tokenizedString[2].c_str()));
+          //opts.jointNode.push_back(atof(tokenizedString[2].c_str()));
           opts.jointNode.push_back(tokenizedString[2]);
           opts.jointInletName.push_back(tokenizedString[3]);
           opts.jointOutletName.push_back(tokenizedString[4]);
@@ -1927,52 +1945,7 @@ void cpl1DType::readModelFile(string inputFile, cvStringVec includedFiles){
         }catch(...){
           throw cvException(string("ERROR: Invalid SEGMENT Format. Line " + to_string(lineCount) + "\n").c_str());
         }
-      }else if(upper_string(tokenizedString[0]) == "SOLVEROPTIONS"){
-        // cout << "Found Solver Options.\n");
-        if(opts.solverOptionDefined){
-          throw cvException("ERROR: SOLVEROPTIONS already defined\n");
-        }
-        if(tokenizedString.size() > 5){
-          throw cvException(string("ERROR: Too many parameters for SOLVEROPTIONS token. Line " + to_string(lineCount) + "\n").c_str());
-        }else if(tokenizedString.size() < 5){
-          throw cvException(string("ERROR: Not enough parameters for SOLVEROPTIONS token. Line " + to_string(lineCount) + "\n").c_str());
-        }
-        try{
-          // long quadPoints,
-          opts.quadPoints = atoi(tokenizedString[1].c_str());
-          // double conv,
-          opts.convergenceTolerance = atof(tokenizedString[2].c_str());
-          // int useIV,
-          opts.useIV = atoi(tokenizedString[3].c_str());
-          // int usestab
-          opts.useStab = atoi(tokenizedString[4].c_str());
-        }catch(...){
-          throw cvException(string("ERROR: Invalid SOLVEROPTIONS Format. Line " + to_string(lineCount) + "\n").c_str());
-        }
-        opts.solverOptionDefined = true;
-      }else if(upper_string(tokenizedString[0]) == std::string("OUTPUT")){
-        if(tokenizedString.size() > 3){
-          throw cvException(string("ERROR: Too many parameters for OUTPUT token. Line " + to_string(lineCount) + "\n").c_str());
-        }else if(tokenizedString.size() < 2){
-          throw cvException(string("ERROR: Not enough parameters for OUTPUT token. Line " + to_string(lineCount) + "\n").c_str());
-        }
-        // Output Type
-        if(upper_string(tokenizedString[1]) == "TEXT"){
-          cvOneDOptions::outputType = OutputTypeScope::OUTPUT_TEXT;
-        }else if(upper_string(tokenizedString[1]) == "VTK"){
-          cvOneDOptions::outputType = OutputTypeScope::OUTPUT_VTK;
-        }else if(upper_string(tokenizedString[1]) == "BOTH"){
-          cvOneDOptions::outputType = OutputTypeScope::OUTPUT_BOTH;
-        }else{
-          throw cvException("ERROR: Invalid OUTPUT Type.\n");
-        }
-        if(tokenizedString.size() > 2){
-          cvOneDOptions::vtkOutputType = atoi(tokenizedString[2].c_str());
-          if(cvOneDOptions::vtkOutputType > 1){
-            throw cvException("ERROR: Invalid OUTPUT VTK Type.\n");
-          }
-        }
-      }else if(upper_string(tokenizedString[0]) == std::string("DATATABLE")){
+      }else if(upper_string(tokenizedString[0]) == "DATATABLE"){
         // cout << "Found Data Table.\n");
         try{
 
@@ -2009,43 +1982,7 @@ void cpl1DType::readModelFile(string inputFile, cvStringVec includedFiles){
         }catch(...){
           throw cvException(string("ERROR: Invalid DATATABLE Format. Line " + to_string(lineCount) + "\n").c_str());
         }
-      }else if(upper_string(tokenizedString[0]) == std::string("MATERIAL")){
-        // cout << "Found Material.\n");
-        if(tokenizedString.size() > 10){
-          throw cvException(string("ERROR: Too many parameters for MATERIAL token. Line " + to_string(lineCount) + "\n").c_str());
-        }else if(tokenizedString.size() < 8){
-          throw cvException(string("ERROR: Not enough parameters for MATERIAL token. Line " + to_string(lineCount) + "\n").c_str());
-        }
-        try{
-          // Material Name
-          cvOneDOptions::materialName.push_back(tokenizedString[1]);
-          // Material Type
-          matType = tokenizedString[2];
-          cvOneDOptions::materialType.push_back(matType);
-          // Density
-          cvOneDOptions::materialDensity.push_back(atof(tokenizedString[3].c_str()));
-          // Dynamic Viscosity
-          cvOneDOptions::materialViscosity.push_back(atof(tokenizedString[4].c_str()));
-          // Reference Pressure
-          cvOneDOptions::materialPRef.push_back(atof(tokenizedString[5].c_str()));
-          // Material Exponent
-          cvOneDOptions::materialExponent.push_back(atof(tokenizedString[6].c_str()));
-          // Extra Material Parameters
-          if(upper_string(matType) == "OLUFSEN"){
-            cvOneDOptions::materialParam1.push_back(atof(tokenizedString[7].c_str()));
-            cvOneDOptions::materialParam2.push_back(atof(tokenizedString[8].c_str()));
-            cvOneDOptions::materialParam3.push_back(atof(tokenizedString[9].c_str()));
-          }else if(upper_string(matType) == "LINEAR"){
-            cvOneDOptions::materialParam1.push_back(atof(tokenizedString[7].c_str()));
-            cvOneDOptions::materialParam2.push_back(0.0);
-            cvOneDOptions::materialParam3.push_back(0.0);
-          }else{
-            throw cvException(string("ERROR: Invalid MATERIAL Type. Line " + to_string(lineCount) + "\n").c_str());
-          }
-        }catch(...){
-          throw cvException("ERROR: Invalid MATERIAL Format.\n");
-        }
-      }else if(upper_string(tokenizedString[0]) == std::string("INCLUDE")){
+      }else if(upper_string(tokenizedString[0]) == "INCLUDE"){
         // Check if the file is active
         if(upper_string(tokenizedString[2]) == "TRUE"){
           doInclude = true;
@@ -2065,6 +2002,9 @@ void cpl1DType::readModelFile(string inputFile, cvStringVec includedFiles){
       }else if((tokenizedString.size() == 0)||(tokenizedString[0].at(0) == '#')||(tokenizedString[0].find_first_not_of(' ') == std::string::npos)){
         // cout << "Found Blank.\n");
         // COMMENT OR BLANK LINE: DO NOTHING
+      }else if(upper_string(tokenizedString[0]) == "SOLVEROPTIONS"){
+      }else if(upper_string(tokenizedString[0]) == "MATERIAL"){
+      }else if(upper_string(tokenizedString[0]) == "OUTPUT"){
       }else{
         // TOKEN NOT RECOGNIZED
         throw cvException(string("ERROR: Invalid Token in input file, line: "  + to_string(lineCount) + "\n").c_str());
@@ -2083,14 +2023,14 @@ void cpl1DType::readModelFile(string inputFile, cvStringVec includedFiles){
 // ====================
 // READ MODEL FROM FILE
 // ====================
-void cpl1DType::readModel(string inputFile){
+void cpl1DType::readModel(){
 
   // List of included Files
   cvStringVec includedFiles;
   string currentFile;
 
   // Read First File
-  readModelFile(inputFile, includedFiles);
+  readModelFile(includedFiles);
 
   //Read Nested Files
   while(includedFiles.size() > 0){
@@ -2100,6 +2040,166 @@ void cpl1DType::readModel(string inputFile){
     // Delete the First element
     includedFiles.erase(includedFiles.begin());
     // Read the file and store new included files
-    readModelFile(inputFile, includedFiles);
+    readModelFile(includedFiles);
+  }
+}
+
+void cpl1DType::readSharedVar(){
+  // Declare input File
+  ifstream infile;
+  infile.open(inputFile);
+  if(infile.fail()){
+    throw cvException("ERROR: Input file does not exist.\n");
+  }
+
+  // Read Data From File
+  std::string buffer;
+  cvStringVec tokenizedString;
+  int lineCount = 1;
+  string  matType;
+  while (std::getline(infile,buffer)){
+
+    // Trim String
+    buffer = trim_string(buffer);
+
+    // Tokenize String
+    tokenizedString = split_string(buffer, " ,\t");
+    if (tokenizedString.size() == 0) { 
+      continue;
+    }
+    // Check for Empty buffer
+    if(!buffer.empty()){
+      // CHECK THE ELEMENT TYPE
+      if(upper_string(tokenizedString[0]) == "SOLVEROPTIONS"){
+        // cout << "Found Solver Options." << endl;
+        if(solverOptionDefined){
+          throw cvException("ERROR: SOLVEROPTIONS already defined\n");
+        }
+        if(tokenizedString.size() > 5){
+          throw cvException(string("ERROR: Too many parameters for SOLVEROPTIONS token. Line " + to_string(lineCount) + "\n").c_str());
+        }else if(tokenizedString.size() < 5){
+          throw cvException(string("ERROR: Not enough parameters for SOLVEROPTIONS token. Line " + to_string(lineCount) + "\n").c_str());
+        }
+        try{
+          // long quadPoints,
+          quadPoints = atoi(tokenizedString[1].c_str());
+          // double conv,
+          convergenceTolerance = atof(tokenizedString[2].c_str());
+          // int useIV,
+          useIV = atoi(tokenizedString[3].c_str());
+          // int usestab
+          useStab = atoi(tokenizedString[4].c_str());
+        }catch(...){
+          throw cvException(string("ERROR: Invalid SOLVEROPTIONS Format. Line " + to_string(lineCount) + "\n").c_str());
+        }
+        solverOptionDefined = true;
+      }else if(upper_string(tokenizedString[0]) == "OUTPUT"){
+        if(tokenizedString.size() > 3){
+          throw cvException(string("ERROR: Too many parameters for OUTPUT token. Line " + to_string(lineCount) + "\n").c_str());
+        }else if(tokenizedString.size() < 2){
+          throw cvException(string("ERROR: Not enough parameters for OUTPUT token. Line " + to_string(lineCount) + "\n").c_str());
+        }
+        // Output Type
+        if(upper_string(tokenizedString[1]) == "TEXT"){
+          outputType = OutputTypeScope::OUTPUT_TEXT;
+        }else if(upper_string(tokenizedString[1]) == "VTK"){
+          outputType = OutputTypeScope::OUTPUT_VTK;
+        }else if(upper_string(tokenizedString[1]) == "BOTH"){
+          outputType = OutputTypeScope::OUTPUT_BOTH;
+        }else{
+          throw cvException("ERROR: Invalid OUTPUT Type.\n");
+        }
+        if(tokenizedString.size() > 2){
+          vtkOutputType = atoi(tokenizedString[2].c_str());
+          if(vtkOutputType > 1){
+            throw cvException("ERROR: Invalid OUTPUT VTK Type.\n");
+          }
+        }
+      }else if(upper_string(tokenizedString[0]) == "MATERIAL"){
+        // cout << "Found Material." << endl;
+        opts.MATnum += 1;
+        if(tokenizedString.size() > 10){
+          throw cvException(string("ERROR: Too many parameters for MATERIAL token. Line " + to_string(lineCount) + "\n").c_str());
+        }else if(tokenizedString.size() < 8){
+          throw cvException(string("ERROR: Not enough parameters for MATERIAL token. Line " + to_string(lineCount) + "\n").c_str());
+        }
+        try{
+          // Material Name
+          materialName.push_back(tokenizedString[1]);
+          // Material Type
+          matType = tokenizedString[2];
+          materialType.push_back(matType);
+          // Density
+          materialDensity.push_back(atof(tokenizedString[3].c_str()));
+          // Dynamic Viscosity
+          materialViscosity.push_back(atof(tokenizedString[4].c_str()));
+          // Reference Pressure
+          materialPRef.push_back(atof(tokenizedString[5].c_str()));
+          // Material Exponent
+          materialExponent.push_back(atof(tokenizedString[6].c_str()));
+          // Extra Material Parameters
+          if(upper_string(matType) == "OLUFSEN"){
+            materialParam1.push_back(atof(tokenizedString[7].c_str()));
+            materialParam2.push_back(atof(tokenizedString[8].c_str()));
+            materialParam3.push_back(atof(tokenizedString[9].c_str()));
+          }else if(upper_string(matType) == "LINEAR"){
+            materialParam1.push_back(atof(tokenizedString[7].c_str()));
+            materialParam2.push_back(0.0);
+            materialParam3.push_back(0.0);
+          }else{
+            throw cvException(string("ERROR: Invalid MATERIAL Type. Line " + to_string(lineCount) + "\n").c_str());
+          }
+        }catch(...){
+          throw cvException("ERROR: Invalid MATERIAL Format.\n");
+        }
+      }else if(upper_string(tokenizedString[0]) == "MODEL"){
+      }else if(upper_string(tokenizedString[0]) == "NODE"){
+      }else if(upper_string(tokenizedString[0]) == "JOINT"){
+      }else if(upper_string(tokenizedString[0]) == "JOINTINLET"){
+      }else if(upper_string(tokenizedString[0]) == "JOINTOUTLET"){
+      }else if(upper_string(tokenizedString[0]) == "SEGMENT"){
+      }else if(upper_string(tokenizedString[0]) == "DATATABLE"){
+        bool foundEnd = false;
+          while(!foundEnd){
+            std::getline(infile,buffer);
+            lineCount++;
+            // Trim String
+            buffer = trim_string(buffer);
+            // Tokenize String
+            tokenizedString = split_string(buffer, " ,\t");
+            if (tokenizedString.size() == 0) { 
+              break;
+            }
+            // Check for Empty buffer
+            if(!buffer.empty()){
+              if(upper_string(tokenizedString[0]) == std::string("ENDDATATABLE")){
+                foundEnd = true;
+              }
+            }
+          }
+      }else if(upper_string(tokenizedString[0]) == "ENDDATATABLE"){
+      }else if(upper_string(tokenizedString[0]) == "INCLUDE"){
+      }else if((tokenizedString.size() == 0)||(tokenizedString[0].at(0) == '#')||(tokenizedString[0].find_first_not_of(' ') == std::string::npos)){
+      }else{
+        // COMMENT OR BLANK LINE: DO NOTHING
+        throw cvException(string("ERROR: Invalid Token in input file, line: "  + to_string(lineCount) + "\n").c_str());
+      }
+    }
+    lineCount++;
+  }
+  // Close File
+  infile.close();
+  // Check for double material name
+  int dblIDX = -1;
+  // PERFORM DATA CHECKING
+  for(int loopA=0;loopA < materialName.size();loopA++){
+    for(int loopB=loopA+1;loopB < materialName.size();loopB++){
+      if(materialName[loopA] == materialName[loopB]){
+        dblIDX = loopA;
+      }
+    }
+  }
+  if(dblIDX >= 0){
+    throw cvException(string("ERROR: Double Material Name: " + materialName[dblIDX] + "\n").c_str());
   }
 }

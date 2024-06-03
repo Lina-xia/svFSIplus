@@ -145,7 +145,7 @@ void cvOneDMthModelBase::SetBoundaryConditions(){
       (*currSolution)[eqNumbers[1]] = sub->GetBoundFlowRate();
       break;
     case BoundCondTypeScope::RESISTANCE:
-            if(cvOneDOptions::useIV==0){
+            if(cpl1DType::useIV==0){
         currS = (*currSolution)[eqNumbers[0]];
           currP = sub->GetMaterial()->GetPressure(currS, sub->GetLength());
         resistance = sub->GetBoundResistance();
@@ -153,7 +153,7 @@ void cvOneDMthModelBase::SetBoundaryConditions(){
         }
       break;
     case BoundCondTypeScope::RESISTANCE_TIME:
-            if(cvOneDOptions::useIV == 0){
+            if(cpl1DType::useIV == 0){
         currS = (*currSolution)[eqNumbers[0]];
           currP = sub->GetMaterial()->GetPressure(currS, sub->GetLength());
         resistance = sub->GetBoundResistance(currentTime);
@@ -184,7 +184,7 @@ void cvOneDMthModelBase::ApplyBoundaryConditions(){
   double rhsBC;//changed rhs to rhsBC to avoid confusion with other "rhs" IV 052003
 
   // Brooke's BC implementation
-  if(cvOneDOptions::useIV == 0){
+  if(cpl1DType::useIV == 0){
     // Set up the inlet Dirichlet boundary condition (flow rate)
     // RHS corresponding to imposed Essential BC
     value = 0.0;
@@ -260,7 +260,7 @@ void cvOneDMthModelBase::ApplyBoundaryConditions(){
     //IV BC implementation, to specialize Inlet&Outlet fluxes
     //+ treat Dirichlet BC for pressure and flow rate BC
     //IV 03-20-03
-    if(cvOneDOptions::useIV == 1){
+    if(cpl1DType::useIV == 1){
 
       // set up the inlet Dirichlet boundary condition (flow rate)
       // for these BC the Inlet term doesn't have to be specialized

@@ -484,6 +484,7 @@ void distribute(Simulation* simulation)
   }
 
   auto& cep_mod = simulation->cep_mod;
+
   for (int iEq = 0; iEq < com_mod.nEq; iEq++) {
     dist_eq(com_mod, cm_mod, cm, tMs, gmtl, cep_mod, com_mod.eq[iEq]);
   }
@@ -545,8 +546,7 @@ void distribute(Simulation* simulation)
 }
 
 
-void dist_bc(ComMod& com_mod, const CmMod& cm_mod, const cmType& cm, bcType& lBc, const std::vector<mshType>& tMs,
-             const Vector<int>& gmtl)
+void dist_bc(ComMod& com_mod, const CmMod& cm_mod, const cmType& cm, bcType& lBc, const std::vector<mshType>& tMs,const Vector<int>& gmtl)
 {
   using namespace consts;
 
@@ -555,6 +555,8 @@ void dist_bc(ComMod& com_mod, const CmMod& cm_mod, const cmType& cm, bcType& lBc
   DebugMsg dmsg(__func__, com_mod.cm.idcm());
   dmsg.banner();
   #endif
+  DebugMsg dmsg(__func__, com_mod.cm.idcm());
+  dmsg.banner();
 
   int task_id = cm.idcm();
   bool is_slave = cm.slv(cm_mod);
@@ -598,10 +600,45 @@ void dist_bc(ComMod& com_mod, const CmMod& cm_mod, const cmType& cm, bcType& lBc
 
   if (utils::btest(lBc.bType, static_cast<int>(BoundaryConditionType::bType_cpl1D))) {
     cm.bcast(cm_mod, lBc.cpl1D.outletName);
-    cm.bcast(cm_mod, lBc.cpl1D.inputFileName);
-    cm.bcast(cm_mod, lBc.cpl1D.OutputFile);
-  }
+    cm.bcast(cm_mod, lBc.cpl1D.inputFile);
+    //一维共用数据广播
+    cm.bcast(cm_mod, cpl1DType::OutputFile);
+    cm.bcast(cm_mod, &cpl1DType::dt);
+    cm.bcast(cm_mod, &cpl1DType::saveIncr);
+    cm.bcast(cm_mod, &cpl1DType::maxStep);
+    cm.bcast(cm_mod, &cpl1DType::quadPoints);
+    cm.bcast(cm_mod, &cpl1DType::convergenceTolerance);
+    cm.bcast(cm_mod, &cpl1DType::useIV);
+    cm.bcast(cm_mod, &cpl1DType::useStab);
 
+    int size = cpl1DType::materialDensity.size();
+    cm.bcast(cm_mod, &size);
+    dmsg << "size = " << size << endl;
+    if (task_id != cm_mod.master) {
+      // 其他进程缓冲区大小与主进程相同
+      cpl1DType::materialName.resize(size);
+      cpl1DType::materialType.resize(size);
+      cpl1DType::materialDensity.resize(size); 
+      cpl1DType::materialViscosity.resize(size); 
+      cpl1DType::materialPRef.resize(size);
+      cpl1DType::materialExponent.resize(size);
+      cpl1DType::materialParam1.resize(size);
+      cpl1DType::materialParam2.resize(size);
+      cpl1DType::materialParam3.resize(size);
+    }
+    cm.bcast(cm_mod, cpl1DType::materialName);
+    cm.bcast(cm_mod, cpl1DType::materialType);
+    cm.bcast(cm_mod, cpl1DType::materialDensity);
+    cm.bcast(cm_mod, cpl1DType::materialViscosity);
+    cm.bcast(cm_mod, cpl1DType::materialPRef);
+    cm.bcast(cm_mod, cpl1DType::materialExponent);
+    cm.bcast(cm_mod, cpl1DType::materialParam1);
+    cm.bcast(cm_mod, cpl1DType::materialParam2);
+    cm.bcast(cm_mod, cpl1DType::materialParam3);
+    dmsg << "materialName = " << cpl1DType::materialName[0] << endl;
+
+  }
+  
   // Communicating time-dependent BC data
   //
   // lBc.gt is declare ALLOCATABLE in MOD.f but we don't
@@ -2055,4 +2092,3 @@ void part_msh(Simulation* simulation, int iM, mshType& lM, Vector<int>& gmtl, in
     tmpYs.clear();
   }
 }
-

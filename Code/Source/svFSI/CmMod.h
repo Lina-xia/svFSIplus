@@ -99,15 +99,18 @@ class cmType {
     //----- M e t h o d s -----//
 
     void bcast(const CmMod& cm_mod, bool* data) const;
-    void bcast(const CmMod& cm_mod, std::vector<bool>& data) const;
-
+    void bcast(const CmMod& cm_mod, int* data) const;
+    void bcast(const CmMod& cm_mod, double* data) const;
     void bcast(const CmMod& cm_mod, std::string& data) const;
 
-    void bcast(const CmMod& cm_mod, double* data) const;
+    void bcast(const CmMod& cm_mod, std::vector<std::string>& data) const;
+    void bcast(const CmMod& cm_mod, std::vector<bool>& data) const;
+    void bcast(const CmMod& cm_mod, std::vector<double>& data) const;
+
     void bcast(const CmMod& cm_mod, Vector<double>& data, const std::string& name="") const;
     void bcast(const CmMod& cm_mod, Array<double>& data, const std::string& name="") const;
 
-    void bcast(const CmMod& cm_mod, int* data) const;
+
     void bcast(const CmMod& cm_mod, Vector<int>& data) const;
 
     //------------

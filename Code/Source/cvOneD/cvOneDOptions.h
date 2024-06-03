@@ -49,6 +49,7 @@ class cvOneDOptions{
     // DATA
     string modelName;
     bool modelNameDefined;
+    int  MATnum = 0;  //是否需要
 
     // NODE DATA
     cvStringVec nodeName;
@@ -73,17 +74,6 @@ class cvOneDOptions{
     cvLongVec   jointOutletListNumber;
     cvLongMat   jointOutletList;
 
-    // MATERIAL
-    static cvStringVec materialName;
-    static cvStringVec materialType;
-    static cvDoubleVec materialDensity;
-    static cvDoubleVec materialViscosity;
-    static cvDoubleVec materialPRef;
-    static cvDoubleVec materialExponent;
-    static cvDoubleVec materialParam1;
-    static cvDoubleVec materialParam2;
-    static cvDoubleVec materialParam3;
-
     // DATATABLE
     cvStringVec dataTableName;
     cvStringVec dataTableType;
@@ -106,15 +96,6 @@ class cvOneDOptions{
     cvLongVec   segmentBranchSegment;
     cvStringVec segmentBoundType;
     cvStringVec segmentDataTableName;
-
-    // SOLVER OPTIONS
-    static int    quadPoints;
-    static double convergenceTolerance;
-    static int    useIV;
-    static int    useStab;
-    static int    outputType;  //0表示TEXT，1表示VTP
-    static int    vtkOutputType;
-    bool solverOptionDefined;
 
     // CHECKING
     void check();

@@ -125,11 +125,92 @@ void cmType::bcast(const CmMod& cm_mod, std::string& data) const
 
   data = buffer;
 }
+// void cmType::bcast(const CmMod& cm_mod, std::vector<std::string>& data) const
+// {
+
+//   if (cm_mod.master == id()) {
+//     // Master process
+//     std::vector<char> buffer(MAX_STRING_SIZE * data.size()); // Allocate a buffer for all strings
+//     // Copy all strings into the buffer
+//     int offset = 0;
+//     for (const auto& str : data) {
+//       if (str.size() > MAX_STRING_SIZE) {
+//         throw std::runtime_error("String is larger than " + std::to_string(MAX_STRING_SIZE) + ".");
+//       }
+//       strcpy(&buffer[offset], str.c_str());
+//       offset += MAX_STRING_SIZE;
+//     }
+
+//     // Broadcast the buffer
+//     MPI_Bcast(buffer.data(), MAX_STRING_SIZE * data.size(), MPI_CHAR, cm_mod.master, com());
+
+//     // Update data with broadcasted strings
+//     offset = 0;
+//     for (auto& str : data) {
+//       str.assign(&buffer[offset], MAX_STRING_SIZE);
+//       offset += MAX_STRING_SIZE;
+//     }
+//   } 
+//     MPI_Barrier(MPI_COMM_WORLD);
+//     // Slave processes
+//     std::vector<char> buffer(MAX_STRING_SIZE * data.size());
+
+//     // Broadcast the buffer
+//     MPI_Bcast(buffer.data(), MAX_STRING_SIZE * data.size(), MPI_CHAR, cm_mod.master, com());
+
+//     // Update data with broadcasted strings
+//     int offset = 0;
+//     for (auto& str : data) {
+//       str.assign(&buffer[offset], MAX_STRING_SIZE);
+//       offset += MAX_STRING_SIZE;
+//     }
+// }
+
+void cmType::bcast(const CmMod& cm_mod, std::vector<std::string>& data) const
+{
+  int MAX_ARRAY_SIZE = MAX_STRING_SIZE * data.size(); // 计算最大数组长度
+
+  // 遍历每个字符串，检查长度是否超过最大限制
+  for (const auto& str : data) {
+    if (str.size() > MAX_STRING_SIZE) {
+      throw std::runtime_error("bcast string is larger than " + std::to_string(MAX_STRING_SIZE) + ".");
+    }
+  }
+
+  // 创建动态分配的缓冲区
+  char* buffer = new char[MAX_ARRAY_SIZE]{};
+
+  // 将每个字符串拷贝到缓冲区中，以连续形式存储
+  int offset = 0;
+  for (const auto& str : data) {
+    strcpy(buffer + offset, str.c_str());
+    offset += str.size() + 1; // +1 用于存储字符串结束符 '\0'
+  }
+
+  // 进行广播
+  MPI_Bcast(buffer, MAX_ARRAY_SIZE, cm_mod::mpchar, cm_mod.master, com());
+
+  // 从缓冲区中恢复每个字符串
+  offset = 0;
+  for (auto& str : data) {
+    str = std::string(buffer + offset);
+    offset += MAX_STRING_SIZE + 1; // 加 1 是因为每个字符串的结束符 '\0' 占用了一个位置
+  }
+
+  // 释放动态分配的缓冲区
+  delete[] buffer;
+}
 
 /// @brief bcast double 
 void cmType::bcast(const CmMod& cm_mod, double* data) const
 {
   MPI_Bcast(data, 1, cm_mod::mpreal, cm_mod.master, com());
+}
+
+/// @brief bcast double 
+void cmType::bcast(const CmMod& cm_mod, vector<double>& data) const
+{
+  MPI_Bcast(data.data(), data.size(), cm_mod::mpreal, cm_mod.master, com());
 }
 
 /// @brief bcast double array

@@ -94,7 +94,7 @@ void Couple1D(Simulation* simulation)
   auto& cm_mod = simulation->cm_mod;
   auto& cm = com_mod.cm;
 
-  #define debug_Couple1D
+  #define n_debug_Couple1D
   #ifdef debug_Couple1D
   DebugMsg dmsg(__func__, com_mod.cm.idcm());
   #endif
@@ -107,25 +107,19 @@ void Couple1D(Simulation* simulation)
         if(utils::btest(bc.bType, enum_int(BoundaryConditionType::bType_cpl1D))){
           auto& Fa = com_mod.msh[bc.iM].fa[bc.iFa];
           auto& cpl1D = bc.cpl1D;
-
-          //第一个时间步预处理，所有的核都执行，因为一个边界的读取的SOLVEROPTIONS、MATERIAL、OUTPUT数据要用到其它边界上
+          auto& opts  = cpl1D.opts;
+          
+          //第一个时间步预处理，SOLVEROPTIONS、MATERIAL、OUTPUT为静态变量
           if (com_mod.cTS == 1){
-
-            cpl1DType::dt = com_mod.dt;
-            cpl1DType::saveIncr = com_mod.saveIncr;
-            cpl1DType::maxStep = com_mod.nTS;
-
-            cpl1D.readModel(cpl1D.inputFileName);
-            cpl1D.opts.check();
-
-            //怎么判断在接口处三维一维是否相接
-            cpl1D.createModel();
-
-            cpl1D.GenerateSolution();
+            if (Fa.nNo != 0){
+              cpl1D.readModel();
+              opts.check();
+              cpl1D.createModel();       //怎么判断在接口处三维一维是否相接
+              cpl1D.GenerateSolution();
+            }
           }
 
           if (Fa.nNo != 0){
-
             double flowRate = 0.0;
             for (int a = 0; a < Fa.nNo; a++){
               int Ac = Fa.gN(a);  //返回全局编号
@@ -169,19 +163,19 @@ void Couple1D(Simulation* simulation)
               // Some Post Processing
               std::string path = simulation->chnl_mod.appPath + "/";
 
-              if(cvOneDOptions::outputType == OutputTypeScope::OUTPUT_TEXT){
+              if(cpl1DType::outputType == OutputTypeScope::OUTPUT_TEXT){
                 cpl1D.postprocess_Text(path);
-              }else if(cvOneDOptions::outputType == OutputTypeScope::OUTPUT_VTK){
-                if(cvOneDOptions::vtkOutputType == 0){
+              }else if(cpl1DType::outputType == OutputTypeScope::OUTPUT_VTK){
+                if(cpl1DType::vtkOutputType == 0){
                   // Export in multifile format
                   cpl1D.postprocess_VTK_XML3D_MULTIPLEFILES(path);
                 }else{
                   // All results in a single VTK File
                   cpl1D.postprocess_VTK_XML3D_ONEFILE(path);
                 }
-              }else if(cvOneDOptions::outputType == OutputTypeScope::OUTPUT_BOTH){
+              }else if(cpl1DType::outputType == OutputTypeScope::OUTPUT_BOTH){
                 cpl1D.postprocess_Text(path);
-                if(cvOneDOptions::vtkOutputType == 0){
+                if(cpl1DType::vtkOutputType == 0){
                   // Export in multifile format
                   cpl1D.postprocess_VTK_XML3D_MULTIPLEFILES(path);
                 }else{
@@ -906,7 +900,7 @@ int main(int argc, char *argv[])
     dmsg << "Read files " << " ... ";
     #endif
     read_files(simulation, file_name);
-
+    MPI_Barrier(MPI_COMM_WORLD);
 
     // Distribute data to processors.
     #ifdef debug_main

@@ -15,39 +15,60 @@
 # include "cvOneDFEAJoint.h"
 # include "cvOneDOptions.h"
 
+using namespace std;
 
 class cpl1DType
 {
   public:
 
     //静态变量表示所有的出口共享这些数据
-    static std::string OutputFile;
-    static bool        path;
-    static double      dt;  //comMod.dt
-    static int         saveIncr;  //comMod.saveIncr
-    static int         maxStep;   //comMod.nTS
-    static int         ASCII;               //VTK输出格式
+    static bool     IfCout;
+    static double   dt;  //comMod.dt
+    static int      saveIncr;  //comMod.saveIncr
+    static int      maxStep;   //comMod.nTS
+    static string   OutputFile;
+    // SOLVER OPTIONS
+    static int    quadPoints;
+    static double convergenceTolerance;
+    static int    useIV;
+    static int    useStab;
+    static bool   solverOptionDefined;
+    // MATERIAL
+    static vector<string> materialName;
+    static vector<string> materialType;
+    static vector<double> materialDensity;
+    static vector<double> materialViscosity;
+    static vector<double> materialPRef;
+    static vector<double> materialExponent;
+    static vector<double> materialParam1;
+    static vector<double> materialParam2;
+    static vector<double> materialParam3;
+    //OUTPUT
+    static int    outputType;    //0表示TEXT，1表示VTP
+    static int    vtkOutputType;
+    static int    ASCII;         //VTK输出格式
 
 
     //非静态变量，具有出口特异性
     cvOneDOptions opts;
     cvOneDModel   *model;  // Pointer to the Model
-    std::string   outletName;
-    std::string   inputFileName;
+    string   outletName;
+    string   inputFile;
     double        flowRateEachTime = 0.0;
     double        preFrom1DEachTime = 0.0;
     int           q = 1;  // Global Solution Loop
     bool          wasSet = false;
 
     // Solve the blood flow problem
+    void readSharedVar();
     void prepro(void);
 	  void QuerryModelInformation(void);
     void GenerateSolution(void);
     void Nonlinear_iter(int step);
     int  getDataTableIDFromStringKey(string key);
     void createModel();
-    void readModelFile(string inputFile, cvStringVec includedFiles);
-    void readModel(string inputFile);
+    void readModelFile(cvStringVec includedFiles);
+    void readModel();
 
     // Result Output
     void postprocess_Text(std::string& path);
