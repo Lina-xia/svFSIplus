@@ -109,17 +109,18 @@ void Couple1D(Simulation* simulation)
           auto& cpl1D = bc.cpl1D;
           auto& opts  = cpl1D.opts;
           
-          //第一个时间步预处理，SOLVEROPTIONS、MATERIAL、OUTPUT为静态变量
-          if (com_mod.cTS == 1){
-            if (Fa.nNo != 0){
-              cpl1D.readModel();
-              opts.check();
-              cpl1D.createModel();       //怎么判断在接口处三维一维是否相接
-              cpl1D.GenerateSolution();
-            }
-          }
-
           if (Fa.nNo != 0){
+
+            //第一个时间步预处理，SOLVEROPTIONS、MATERIAL、OUTPUT为静态变量
+            if (com_mod.cTS == 1){
+              if (Fa.nNo != 0){
+                cpl1D.readModel();
+                opts.check();
+                cpl1D.createModel();       //怎么判断在接口处三维一维是否相接
+                cpl1D.GenerateSolution();
+              }
+            }
+
             double flowRate = 0.0;
             for (int a = 0; a < Fa.nNo; a++){
               int Ac = Fa.gN(a);  //返回全局编号

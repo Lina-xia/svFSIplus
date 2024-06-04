@@ -28,13 +28,10 @@ GenBC.int
 InitialData
 
 # xia
-build
 change.sh
+build*
 tests/
 my_test/
-branch_outlet1/
-build_csparse/
-build_debug/
 
 #branch例子
 branch/*.out
