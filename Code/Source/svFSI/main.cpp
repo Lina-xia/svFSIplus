@@ -187,10 +187,10 @@ void Couple1D(Simulation* simulation)
             }
           }
         }
+        MPI_Barrier(MPI_COMM_WORLD);
       }
     }
   }
-  MPI_Barrier(MPI_COMM_WORLD);
 }
 
 /// @brief Iterate the precomputed state-variables in time using linear interpolation to the current time step size

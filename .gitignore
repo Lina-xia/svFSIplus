@@ -32,6 +32,4 @@ change.sh
 build*
 tests/
 my_test/
-
-#branch例子
-branch/*.out
+*.out
