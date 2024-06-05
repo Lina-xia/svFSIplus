@@ -83,7 +83,7 @@
    <Add_BC name="inlet" > 
       <Type> Dir </Type>
       <Time_dependence> Steady </Time_dependence> 
-      <Value> -10 </Value>
+      <Value> -100 </Value>
       <Profile> Parabolic </Profile> 
       <Impose_flux> true </Impose_flux> 
    </Add_BC> 

@@ -90,12 +90,14 @@ void cpl1DType::postprocess_Text(string& path){
     char tmp4[512];
     char tmp5[512];
     char tmp6[512]; // WSS
+    char tmp7[512]; // vecolity_flux
 
     strcpy(tmp2, path.c_str());
     strcpy(tmp3, path.c_str());
     strcpy(tmp4, path.c_str());
     strcpy(tmp5, path.c_str());
     strcpy(tmp6, path.c_str());
+    strcpy(tmp7, path.c_str());
 
     char *btemp= model-> getModelName(); // add to write out binary files for java
     
@@ -104,6 +106,8 @@ void cpl1DType::postprocess_Text(string& path){
     strcat(tmp4, btemp);
     strcat(tmp5, btemp);
     strcat(tmp6, btemp);
+    strcat(tmp7, btemp);
+
 
     strcat(tmp2, tmp1);
     strcat(tmp2, "_flow.dat");
@@ -114,15 +118,18 @@ void cpl1DType::postprocess_Text(string& path){
     strcat(tmp4, tmp1);
     strcat(tmp4, "_pressure.dat");
     cout << tmp4 << endl;
-    strcat(tmp5, tmp1);
-    strcat(tmp5,"_Re.dat");
-    cout << tmp5 << endl;
-    strcat(tmp6, tmp1);
-    strcat(tmp6,"_wss.dat");
-    cout << tmp6 << endl;
+    // strcat(tmp5, tmp1);
+    // strcat(tmp5,"_Re.dat");
+    // cout << tmp5 << endl;
+    // strcat(tmp6, tmp1);
+    // strcat(tmp6,"_wss.dat");
+    // cout << tmp6 << endl;
+    strcat(tmp7, tmp1);
+    strcat(tmp7,"_vecolity_flux.dat");
+    cout << tmp7 << endl;
 
-    FILE *fp1,*fp2,*fp3,*fp5,*fp6; //for binary
-    ofstream flow,area,pressure,reynolds,wss; // for ASCII
+    FILE *fp2,*fp3,*fp4,*fp5,*fp6, *fp7; //for binary
+    ofstream flow,area,pressure,reynolds,wss,vecolity_flux; // for ASCII
 
     if(ASCII){
 
@@ -130,23 +137,26 @@ void cpl1DType::postprocess_Text(string& path){
         flow.open(tmp2, ios::out);
         area.open(tmp3, ios::out);
         pressure.open(tmp4, ios::out);
-        reynolds.open(tmp5, ios::out);
-        wss.open(tmp6, ios::out);
+        // reynolds.open(tmp5, ios::out);
+        // wss.open(tmp6, ios::out);
+        vecolity_flux.open(tmp7, ios::out);
 
         flow.precision(OUTPUT_PRECISION);
         area.precision(OUTPUT_PRECISION);
         pressure.precision(OUTPUT_PRECISION);
-        reynolds.precision(OUTPUT_PRECISION);
-        wss.precision(OUTPUT_PRECISION);
+        // reynolds.precision(OUTPUT_PRECISION);
+        // wss.precision(OUTPUT_PRECISION);
+        vecolity_flux.precision(OUTPUT_PRECISION);
 
     }else{
 
       // Binary Files
-      fp1 = fopen(tmp2,"wb");
-      fp2 = fopen(tmp3,"wb");
-      fp3 = fopen(tmp4,"wb");
+      fp2 = fopen(tmp2,"wb");
+      fp3 = fopen(tmp3,"wb");
+      fp4 = fopen(tmp4,"wb");
       fp5 = fopen(tmp5,"wb");
       fp6 = fopen(tmp6,"wb");
+      fp7 = fopen(tmp7,"wb");
 
     }
     double val;
@@ -158,7 +168,7 @@ void cpl1DType::postprocess_Text(string& path){
         if(ASCII){
           flow << TotalSolution[i][j] << " ";
         }else{
-          fwrite(&val,sizeof(double),1,fp1);
+          fwrite(&val,sizeof(double),1,fp2);
         }
       }
       if(ASCII) flow << endl;
@@ -166,50 +176,62 @@ void cpl1DType::postprocess_Text(string& path){
 
     // Output the Area/Pressure/Reynolds/WSS file
     int ii;
-    double Re, r, flo, wssVal;
+    double Area, Re, Pre, r, flo, wssVal,vel_flux;
 
     for(ii=0,j=startOut;ii<numEls+1 && j<finishOut;ii++,j+=2){
       double z = (ii/double(numEls))*segLength;
       for(int i=0;i<TotalSolution.Rows();i++){
         //write area
-        val = (double)TotalSolution[i][j];
+        Area = (double)TotalSolution[i][j];
         if(ASCII){
           area << TotalSolution[i][j] << " ";
         }else{
-          fwrite(&val,sizeof(double),1,fp2);
+          fwrite(&Area,sizeof(double),1,fp3);
         }
-        r = sqrt(val/M_PI);
+
+        // Write Re
+        r = sqrt(Area/M_PI);
         flo = (double)TotalSolution[i][j+1];
         //usual Re=rho/mu*D*velocity=rho/mu*Q*sqrt(4/Pi/Area)
-        Re = curMat->GetDensity()/curMat->GetDynamicViscosity()*flo/sqrt(val)*sqrt(4.0/M_PI);
+        Re = curMat->GetDensity()/curMat->GetDynamicViscosity()*flo/sqrt(Area)*sqrt(4.0/M_PI);
+        // if(ASCII){
+        //   reynolds << Re << " ";
+        // }else{
+        //   fwrite(&Re,sizeof(double),1,fp5);
+        // }
 
         // Write pressure - Initial (CGS) Units
-        val = (double) curMat->GetPressure(TotalSolution[i][j],z);
+        Pre = (double) curMat->GetPressure(TotalSolution[i][j],z);
         if(ASCII){
           pressure << curMat->GetPressure(TotalSolution[i][j],z) << " ";
         }else{
-          fwrite(&val, sizeof(double),1,fp3);
+          fwrite(&Pre, sizeof(double),1,fp4);
         }
 
+        // // write Wall Shear Stresses for Poiseuille flow
+        // wssVal = (4.0*curMat->GetDynamicViscosity()*flo)/(M_PI*r*r*r);
+        // if(ASCII){
+        //   wss << wssVal << " ";
+        // }else{
+        //   fwrite(&wssVal,sizeof(double),1,fp6);
+        // }
+
+        // Output the vecolity flux file (= flow*area)
+        vel_flux = flo * Area;
         if(ASCII){
-          reynolds << Re << " ";
+          vecolity_flux << vel_flux << " ";
         }else{
-          fwrite(&Re,sizeof(double),1,fp5);
+          fwrite(&vel_flux,sizeof(double),1,fp6);
         }
 
-        // Compute Wall Shear Stresses for Poiseuille flow
-        wssVal = (4.0*curMat->GetDynamicViscosity()*flo)/(M_PI*r*r*r);
-        if(ASCII){
-          wss << wssVal << " ";
-        }else{
-          fwrite(&wssVal,sizeof(double),1,fp6);
-        }
       }
+
       if(ASCII){
         area << endl;
         pressure << endl;
-        reynolds << endl;
-        wss << endl;
+        // reynolds << endl;
+        // wss << endl;
+        vecolity_flux << endl;
       }
     }
 
@@ -218,15 +240,18 @@ void cpl1DType::postprocess_Text(string& path){
     if(ASCII){
       area.close();
       pressure.close();
-      reynolds.close();
       flow.close();
-      wss.close();
+      // reynolds.close();
+      // wss.close();
+      vecolity_flux.close();
+
     }else{
-      fclose(fp1); //flow.dat
-      fclose(fp2); //area.dat
-      fclose(fp3); //pressure.dat
+      fclose(fp2); //flow.dat
+      fclose(fp3); //area.dat
+      fclose(fp4); //pressure.dat
       fclose(fp5); //Re.dat
       fclose(fp6); //wss.dat
+      fclose(fp7); //vecolity_flux.dat
     }
   }
 }
