@@ -54,7 +54,7 @@ class cpl1DType
     cvOneDModel   *model;  // Pointer to the Model
     string   outletName;
     string   inputFile;
-    double        flowRateEachTime = 0.0;
+    double        flowEachTime = 0.0;
     double        preFrom1DEachTime = 0.0;
     int           q = 1;  // Global Solution Loop
     bool          wasSet = false;

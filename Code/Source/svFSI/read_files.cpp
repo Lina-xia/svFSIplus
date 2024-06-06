@@ -241,8 +241,6 @@ void read_bc(Simulation* simulation, EquationParameters* eq_params, eqType& lEq,
       outFile << "----------------------------------------------------" << endl;
       outFile.close();
       cpl1DType::IfCout = true;
-
-
     }
 
   } else {

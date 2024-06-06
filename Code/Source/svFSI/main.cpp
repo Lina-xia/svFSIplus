@@ -108,35 +108,25 @@ void Couple1D(Simulation* simulation)
           auto& Fa = com_mod.msh[bc.iM].fa[bc.iFa];
           auto& cpl1D = bc.cpl1D;
           auto& opts  = cpl1D.opts;
-          
-          if (Fa.nNo != 0){
 
-            //第一个时间步预处理，SOLVEROPTIONS、MATERIAL、OUTPUT为静态变量
+          cpl1D.flowEachTime = all_fun::integ(com_mod, cm_mod, Fa, com_mod.Yn, eq.s, eq.s + com_mod.nsd-1);
+          // dmsg << ">>> flowEachTime: " << cpl1D.flowEachTime;
+          if (Fa.nNo != 0){
+            //第一个时间步预处理
             if (com_mod.cTS == 1){
-              if (Fa.nNo != 0){
                 cpl1D.readModel();
                 opts.check();
                 cpl1D.createModel();       //怎么判断在接口处三维一维是否相接
                 cpl1D.GenerateSolution();
-              }
             }
 
-            double flowRate = 0.0;
-            for (int a = 0; a < Fa.nNo; a++){
-              int Ac = Fa.gN(a);  //返回全局编号
-              int s = eq.s;
-              flowRate += sqrt(pow(com_mod.Yn(s, Ac), 2) +
-                              pow(com_mod.Yn(s+1, Ac), 2) +
-                              pow(com_mod.Yn(s+2, Ac), 2));
-            }
-            cpl1D.flowRateEachTime = flowRate / Fa.nNo;
-
+            dmsg << ">>> flowEachTime: " << cpl1D.flowEachTime;
             #ifdef debug_Couple1D
               dmsg.banner();
               dmsg << ">>> iBc: " << iBc; 
               dmsg << ">>> name: " << Fa.name;
               dmsg << ">>> Fa.nNo: " << Fa.nNo;
-              dmsg << ">>> flowRateEachTime: " << cpl1D.flowRateEachTime;
+              dmsg << ">>> flowEachTime: " << cpl1D.flowEachTime;
             #endif
             
             cpl1D.Nonlinear_iter(com_mod.cTS);
@@ -152,7 +142,7 @@ void Couple1D(Simulation* simulation)
               nv_age(i) = nv(i) / Fa.nNo;
               bc.h(i) =  cpl1D.preFrom1DEachTime * nv_age(i);
             }
-
+            dmsg << ">>> preFrom1DEachTime: " << cpl1D.preFrom1DEachTime;
             #ifdef debug_Couple1D
             dmsg << ">>> preFrom1DEachTime: " << cpl1D.preFrom1DEachTime;
             dmsg << ">>> nV_age: " << nv_age;
