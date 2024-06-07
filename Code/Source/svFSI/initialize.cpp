@@ -800,7 +800,7 @@ void initialize(Simulation* simulation, Vector<double>& timeP)
   set_bc::set_bc_dir(com_mod, com_mod.Ao, com_mod.Yo, com_mod.Do);
 
   // Preparing TXT files
-  txt_ns::txt(simulation, false);
+  txt_ns::txt(simulation, true);
 
   // Printing the first line and initializing timeP
   int co = 1;

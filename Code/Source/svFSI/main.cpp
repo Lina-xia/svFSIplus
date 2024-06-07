@@ -110,17 +110,16 @@ void Couple1D(Simulation* simulation)
           auto& opts  = cpl1D.opts;
 
           cpl1D.flowEachTime = all_fun::integ(com_mod, cm_mod, Fa, com_mod.Yn, eq.s, eq.s + com_mod.nsd-1);
-          // dmsg << ">>> flowEachTime: " << cpl1D.flowEachTime;
           if (Fa.nNo != 0){
+
             //第一个时间步预处理
             if (com_mod.cTS == 1){
                 cpl1D.readModel();
                 opts.check();
                 cpl1D.createModel();       //怎么判断在接口处三维一维是否相接
-                cpl1D.GenerateSolution();
+                
             }
 
-            dmsg << ">>> flowEachTime: " << cpl1D.flowEachTime;
             #ifdef debug_Couple1D
               dmsg.banner();
               dmsg << ">>> iBc: " << iBc; 
@@ -128,8 +127,7 @@ void Couple1D(Simulation* simulation)
               dmsg << ">>> Fa.nNo: " << Fa.nNo;
               dmsg << ">>> flowEachTime: " << cpl1D.flowEachTime;
             #endif
-            
-            cpl1D.Nonlinear_iter(com_mod.cTS);
+            cpl1D.GenerateSolution();
             
             // 每个点的法向量其实有细微出入, 取平均值带入
             // nv_age方便查看debug
@@ -140,41 +138,30 @@ void Couple1D(Simulation* simulation)
                 nv(i) += Fa.nV(i,j);  //所有点n_i的和
               }
               nv_age(i) = nv(i) / Fa.nNo;
-              bc.h(i) =  cpl1D.preFrom1DEachTime * nv_age(i);
+              bc.h(i) =  - cpl1D.preFrom1DEachTime * nv_age(i);
             }
-            dmsg << ">>> preFrom1DEachTime: " << cpl1D.preFrom1DEachTime;
+
             #ifdef debug_Couple1D
             dmsg << ">>> preFrom1DEachTime: " << cpl1D.preFrom1DEachTime;
             dmsg << ">>> nV_age: " << nv_age;
             dmsg << ">>> h: " << bc.h;
             #endif
 
-            //最后一个时间步后处理
-            if (com_mod.cTS == cpl1DType::maxStep){ 
+            // //不需要输出
+            if (com_mod.cTS % com_mod.saveIncr == 0){ 
               // Some Post Processing
               std::string path = simulation->chnl_mod.appPath + "/";
 
-              if(cpl1DType::outputType == OutputTypeScope::OUTPUT_TEXT){
+              // if(cpl1DType::outputType == OutputTypeScope::OUTPUT_TEXT){
                 cpl1D.postprocess_Text(path);
-              }else if(cpl1DType::outputType == OutputTypeScope::OUTPUT_VTK){
-                if(cpl1DType::vtkOutputType == 0){
-                  // Export in multifile format
-                  cpl1D.postprocess_VTK_XML3D_MULTIPLEFILES(path);
-                }else{
-                  // All results in a single VTK File
-                  cpl1D.postprocess_VTK_XML3D_ONEFILE(path);
-                }
-              }else if(cpl1DType::outputType == OutputTypeScope::OUTPUT_BOTH){
-                cpl1D.postprocess_Text(path);
-                if(cpl1DType::vtkOutputType == 0){
-                  // Export in multifile format
-                  cpl1D.postprocess_VTK_XML3D_MULTIPLEFILES(path);
-                }else{
-                  // All results in a single VTK File
-                  cpl1D.postprocess_VTK_XML3D_ONEFILE(path);
-                }
-              }
+              // }else if(cpl1DType::outputType == OutputTypeScope::OUTPUT_VTK){
+              //   cpl1D.postprocess_VTK(path);
+              // }else if(cpl1DType::outputType == OutputTypeScope::OUTPUT_BOTH){
+              //   cpl1D.postprocess_Text(path);
+              //   cpl1D.postprocess_VTK_XML3D(path);
+              // }
             }
+            
           }
         }
         MPI_Barrier(MPI_COMM_WORLD);
@@ -700,13 +687,12 @@ void iterate_solution(Simulation* simulation)
       }
     }
     */
-
     // Saving the TXT files containing average and fluxes (or ECGs)
     #ifdef debug_iterate_solution
     dmsg << "Saving the TXT files containing average and fluxes ..." << std::endl;
     dmsg << "Saving the TXT files containing ECGs ..." << std::endl;
     #endif
-
+    
     txt_ns::txt(simulation, false);
 
     // If remeshing is required then save current solution.

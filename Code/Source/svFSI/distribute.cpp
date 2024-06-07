@@ -601,9 +601,6 @@ void dist_bc(ComMod& com_mod, const CmMod& cm_mod, const cmType& cm, bcType& lBc
     cm.bcast(cm_mod, lBc.cpl1D.inputFile);
     //一维共用数据广播
     cm.bcast(cm_mod, cpl1DType::OutputFile);
-    cm.bcast(cm_mod, &cpl1DType::dt);
-    cm.bcast(cm_mod, &cpl1DType::saveIncr);
-    cm.bcast(cm_mod, &cpl1DType::maxStep);
     cm.bcast(cm_mod, &cpl1DType::quadPoints);
     cm.bcast(cm_mod, &cpl1DType::convergenceTolerance);
     cm.bcast(cm_mod, &cpl1DType::useIV);

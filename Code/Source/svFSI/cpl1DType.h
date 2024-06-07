@@ -22,10 +22,7 @@ class cpl1DType
   public:
 
     //静态变量表示所有的出口共享这些数据
-    static bool     IfCout;
-    static double   dt;  //comMod.dt
-    static int      saveIncr;  //comMod.saveIncr
-    static int      maxStep;   //comMod.nTS
+    static bool     CreateCout;
     static string   OutputFile;
     // SOLVER OPTIONS
     static int    quadPoints;
@@ -45,18 +42,14 @@ class cpl1DType
     static vector<double> materialParam3;
     //OUTPUT
     static int    outputType;    //0表示TEXT，1表示VTP
-    static int    vtkOutputType;
-    static int    ASCII;         //VTK输出格式
-
 
     //非静态变量，具有出口特异性
     cvOneDOptions opts;
     cvOneDModel   *model;  // Pointer to the Model
-    string   outletName;
-    string   inputFile;
-    double        flowEachTime = 0.0;
-    double        preFrom1DEachTime = 0.0;
-    int           q = 1;  // Global Solution Loop
+    string        outletName;
+    string        inputFile;
+    double        flowEachTime;
+    double        preFrom1DEachTime;
     bool          wasSet = false;
 
     // Solve the blood flow problem
@@ -64,7 +57,6 @@ class cpl1DType
     void prepro(void);
 	  void QuerryModelInformation(void);
     void GenerateSolution(void);
-    void Nonlinear_iter(int step);
     int  getDataTableIDFromStringKey(string key);
     void createModel();
     void readModelFile(cvStringVec includedFiles);
@@ -72,8 +64,7 @@ class cpl1DType
 
     // Result Output
     void postprocess_Text(std::string& path);
-    void postprocess_VTK_XML3D_ONEFILE(std::string& path);
-    void postprocess_VTK_XML3D_MULTIPLEFILES(std::string& path);
+    void postprocess_VTK_XML3D(std::string& path);
     
     // Find Segment index given the ID
     int getSegmentIndex(int segID);
@@ -83,6 +74,8 @@ class cpl1DType
 
  private:
 
+    int  step;  //所走的虚拟时间步
+    bool CreateFile = true;
     vector<cvOneDSubdomain*> subdomainList;
     vector<cvOneDFEAJoint*> jointList;
     vector<int> outletList;
