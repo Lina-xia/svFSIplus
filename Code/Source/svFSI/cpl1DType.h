@@ -64,7 +64,7 @@ class cpl1DType
 
     // Result Output
     void postprocess_Text(std::string& path);
-    void postprocess_VTK_XML3D(std::string& path);
+    void postprocess_VTK(std::string& path, int& cTS, double& scF);
     
     // Find Segment index given the ID
     int getSegmentIndex(int segID);

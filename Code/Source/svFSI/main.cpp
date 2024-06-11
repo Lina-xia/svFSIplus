@@ -101,11 +101,13 @@ void Couple1D(Simulation* simulation)
 
   for (int iEq = 0; iEq < com_mod.nEq; iEq++) {
     auto& eq = com_mod.eq[iEq];
+
     if (eq.phys == EquationType::phys_fluid) {
       for (int iBc = 0; iBc < eq.nBc; iBc++) {
         auto& bc = eq.bc[iBc];
         if(utils::btest(bc.bType, enum_int(BoundaryConditionType::bType_cpl1D))){
-          auto& Fa = com_mod.msh[bc.iM].fa[bc.iFa];
+          auto& mesh = com_mod.msh[bc.iM];
+          auto& Fa = mesh.fa[bc.iFa];
           auto& cpl1D = bc.cpl1D;
           auto& opts  = cpl1D.opts;
 
@@ -149,17 +151,16 @@ void Couple1D(Simulation* simulation)
 
             // //不需要输出
             if (com_mod.cTS % com_mod.saveIncr == 0){ 
-              // Some Post Processing
               std::string path = simulation->chnl_mod.appPath + "/";
-
-              // if(cpl1DType::outputType == OutputTypeScope::OUTPUT_TEXT){
+              // cout << "cpl1DType::outputType = " << cpl1DType::outputType << endl;
+              if(cpl1DType::outputType == OutputTypeScope::OUTPUT_TEXT){
                 cpl1D.postprocess_Text(path);
-              // }else if(cpl1DType::outputType == OutputTypeScope::OUTPUT_VTK){
-              //   cpl1D.postprocess_VTK(path);
-              // }else if(cpl1DType::outputType == OutputTypeScope::OUTPUT_BOTH){
-              //   cpl1D.postprocess_Text(path);
-              //   cpl1D.postprocess_VTK_XML3D(path);
-              // }
+              }else if(cpl1DType::outputType == OutputTypeScope::OUTPUT_VTK){
+                cpl1D.postprocess_VTK(path, com_mod.cTS, mesh.scF);
+              }else if(cpl1DType::outputType == OutputTypeScope::OUTPUT_BOTH){
+                cpl1D.postprocess_Text(path);
+                cpl1D.postprocess_VTK(path, com_mod.cTS, mesh.scF);
+              }
             }
             
           }

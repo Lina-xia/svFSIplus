@@ -605,6 +605,7 @@ void dist_bc(ComMod& com_mod, const CmMod& cm_mod, const cmType& cm, bcType& lBc
     cm.bcast(cm_mod, &cpl1DType::convergenceTolerance);
     cm.bcast(cm_mod, &cpl1DType::useIV);
     cm.bcast(cm_mod, &cpl1DType::useStab);
+    cm.bcast(cm_mod, &cpl1DType::outputType);
 
     int size = cpl1DType::materialDensity.size();
     cm.bcast(cm_mod, &size);

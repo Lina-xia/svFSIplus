@@ -39,12 +39,13 @@ using namespace std;
 
 // Static Declarations...
 bool      cpl1DType::CreateCout = true;
+bool      cpl1DType::solverOptionDefined = false;
+// 需要广播的数据
 int       cpl1DType::quadPoints = 2;
 double    cpl1DType::convergenceTolerance = 1.0e-8;
 int       cpl1DType::useIV = 1;
 int       cpl1DType::useStab = 1;
 int       cpl1DType::outputType = 0; // Default Text Output; 0表示TXET;1表示VTP;2表示BOTH
-bool      cpl1DType::solverOptionDefined = false;
 string    cpl1DType::OutputFile = string("OneDSolver.out");
 
 vector<string> cpl1DType::materialName = {};
@@ -242,12 +243,10 @@ void evalSegmentLocalAxis(double axis[][3]){
   axis[2][2] /= mod;
 }
 
-// =======================================
-// WRITE 3D XML VTK RESULTS - ALL ONE FILE,还没改
-// =======================================
-/*
-void cpl1DType::postprocess_VTK_XML3D(string& path){
-
+// =======================================================
+// WRITE 3D XML VTK RESULTS - MULTIPLE FILES FOR ANIMATION
+// =======================================================
+void cpl1DType::postprocess_VTK(std::string& path,int& cTS, double& scF){
   // Set Constant Number of Subdivisions on the vessel circumference
   int circSubdiv = 20;
 
@@ -256,21 +255,6 @@ void cpl1DType::postprocess_VTK_XML3D(string& path){
   cvOneDJoint* currJoint = NULL;
   cvOneDMaterial* curMat = NULL;
   cvOneDNode* currNode = NULL;
-
-  // Set and open VTK file
-  char fileName[512];
-  char* modelName= model->getModelName();
-  strcpy(fileName, path.c_str());
-
-  strcat(fileName, modelName);
-  strcat(fileName, ".vtp");
-  FILE* vtkFile;
-  vtkFile=fopen(fileName,"w");
-
-  // Write VTK XML Header
-  fprintf(vtkFile,"<?xml version=\"1.0\"?>\n");
-  fprintf(vtkFile,"<VTKFile type=\"PolyData\" version=\"0.1\" byte_order=\"LittleEndian\">\n");
-  fprintf(vtkFile,"<PolyData>\n");
 
   // DEFINE INCIDENCE
   std::vector<double> segInlets(model->getNumberOfSegments());
@@ -340,8 +324,10 @@ void cpl1DType::postprocess_VTK_XML3D(string& path){
     }
   }
 
-  // Every Segment is a Piece
+  // LOOP OVER TIME
   int totSegmentPoints = 0;
+  int totSegmentSolutions = 0;
+  long segOffset = 0;
   int inletSegJoint = 0;
   int outletSegJoint = 0;
   double segVers[3][3];
@@ -366,105 +352,131 @@ void cpl1DType::postprocess_VTK_XML3D(string& path){
   double iniArea = 0.0;
   double newArea = 0.0;
   double radDisp = 0.0;
-  long segOffset = 0;
-  for(int loopSegment=0;loopSegment<model->getNumberOfSegments();loopSegment++){
+  int loopTime = step; //只输出最后一个虚拟时间步的数据
+  cout << "step = " << step << endl;
+  cvStringVec fileList;
+  string fileName;
 
-    // Clear the node list for the segment
-    segNodeList.clear();
+    // Set and open VTK file for current time step
+    fileName = model->getModelName();
+    char timeString[512];
+    char suffix[512];
+    sprintf(timeString, "_%05d", cTS);
+    fileName = path.c_str() + fileName + string(timeString) + ".vtp";
+    FILE* vtkFile;
+    vtkFile = fopen(fileName.c_str(),"w");
+    // Add to a list of files
+    fileList.push_back(fileName);
 
-    // Get Current Segment
-    currSeg = model->getSegment(loopSegment);
+    // Write VTK XML Header
+    fprintf(vtkFile,"<?xml version=\"1.0\"?>\n");
+    fprintf(vtkFile,"<VTKFile type=\"PolyData\" version=\"0.1\" byte_order=\"LittleEndian\">\n");
+    fprintf(vtkFile,"<PolyData>\n");
 
-    // Compute the total number of points for this segment
-    totSegmentPoints = (currSeg->getNumElements()+1) * circSubdiv;
+    // Init Segment Offset
+    segOffset = 0;
 
-    // Set the range for the totalsoluton of this segment
-    startOut = segOffset;
-    finishOut = segOffset + 2*(currSeg->getNumElements()+1);
+    // LOOP OVER THE SEGMENTS
+    for(int loopSegment=0;loopSegment<model->getNumberOfSegments();loopSegment++){
 
-    // Write Piece Header
-    fprintf(vtkFile,"<Piece NumberOfPoints=\"%d\" NumberOfVerts=\"0\" NumberOfLines=\"0\" NumberOfStrips=\"%ld\" NumberOfPolys=\"0\">\n",totSegmentPoints,currSeg->getNumElements());
+      // Clear the node list for the segment
+      segNodeList.clear();
 
-    // Get inlet and outlet joints
-    inletSegJoint = segInlets[loopSegment];
-    outletSegJoint = segOutlets[loopSegment];
+      // Get Current Segment
+      currSeg = model->getSegment(loopSegment);
 
-    // Compute Segment Versor
-    segVers[0][0] = nodeList[outletSegJoint][0] - nodeList[inletSegJoint][0];
-    segVers[1][0] = nodeList[outletSegJoint][1] - nodeList[inletSegJoint][1];
-    segVers[2][0] = nodeList[outletSegJoint][2] - nodeList[inletSegJoint][2];
-    mod = sqrt(segVers[0][0]*segVers[0][0] + segVers[1][0]*segVers[1][0] + segVers[2][0]*segVers[2][0]);
-    segVers[0][0] /= mod;
-    segVers[1][0] /= mod;
-    segVers[2][0] /= mod;
+      // Compute the total number of points for this segment
+      totSegmentSolutions = (currSeg->getNumElements()+1);
+      totSegmentPoints = totSegmentSolutions * circSubdiv;
 
-    lengthByNodes = mod;
-    lengthBySegment = currSeg->getSegmentLength();
+      // Set the range for the totalsoluton of this segment
+      startOut = segOffset;
+      finishOut = segOffset + 2*(totSegmentSolutions);
 
-    // Compute Segment Local axis system
-    evalSegmentLocalAxis(segVers);
+      // Get Material
+      curMat = subdomainList[loopSegment]->GetMaterial();
 
-    // Loop on the number of elements
-    for(int loopEl=0;loopEl<currSeg->getNumElements() + 1;loopEl++){
-      // Compress/Elongate solution by length between nodes rather than defined segment length - to prioritize segment length
-      // and maintain similar geometry to node definitions, MD 4/2/19
-      currCentre[0] = nodeList[inletSegJoint][0] + loopEl*lengthByNodes/double(currSeg->getNumElements())*segVers[0][0];
-      currCentre[1] = nodeList[inletSegJoint][1] + loopEl*lengthByNodes/double(currSeg->getNumElements())*segVers[1][0];
-      currCentre[2] = nodeList[inletSegJoint][2] + loopEl*lengthByNodes/double(currSeg->getNumElements())*segVers[2][0];
+      // Write Piece Header
+      fprintf(vtkFile,"<Piece NumberOfPoints=\"%d\" NumberOfVerts=\"0\" NumberOfLines=\"0\" NumberOfStrips=\"%ld\" NumberOfPolys=\"0\">\n",totSegmentPoints,currSeg->getNumElements());
 
-      // Get initial radius at current location
-      currIniArea = currSeg->getInitInletS() + (loopEl/double(currSeg->getNumElements()))*(currSeg->getInitOutletS() - currSeg->getInitInletS());
-      currIniRad = sqrt(currIniArea/M_PI);
+      // Get inlet and outlet joints
+      inletSegJoint = segInlets[loopSegment];
+      outletSegJoint = segOutlets[loopSegment];
 
-      // Loop on the subdivisions
-      for(int loopSubdiv=0;loopSubdiv<circSubdiv;loopSubdiv++){
-        currTheta = loopSubdiv*2*M_PI/double(circSubdiv);
-        tmp.clear();
-        tmp.push_back(currCentre[0] + currIniRad*segVers[0][1]*cos(currTheta) + currIniRad*segVers[0][2]*sin(currTheta));
-        tmp.push_back(currCentre[1] + currIniRad*segVers[1][1]*cos(currTheta) + currIniRad*segVers[1][2]*sin(currTheta));
-        tmp.push_back(currCentre[2] + currIniRad*segVers[2][1]*cos(currTheta) + currIniRad*segVers[2][2]*sin(currTheta));
-        segNodeList.push_back(tmp);
+      // Compute Segment Versor
+      segVers[0][0] = nodeList[outletSegJoint][0] - nodeList[inletSegJoint][0];
+      segVers[1][0] = nodeList[outletSegJoint][1] - nodeList[inletSegJoint][1];
+      segVers[2][0] = nodeList[outletSegJoint][2] - nodeList[inletSegJoint][2];
+      mod = sqrt(segVers[0][0]*segVers[0][0] + segVers[1][0]*segVers[1][0] + segVers[2][0]*segVers[2][0]);
+      segVers[0][0] /= mod;
+      segVers[1][0] /= mod;
+      segVers[2][0] /= mod;
+
+      lengthByNodes = mod;
+      lengthBySegment = currSeg->getSegmentLength();
+
+      // Compute Segment Local axis system
+      evalSegmentLocalAxis(segVers);
+
+      // Loop on the number of elements
+      for(int loopEl=0;loopEl<currSeg->getNumElements() + 1;loopEl++){
+        // Compress/Elongate solution by length between nodes rather than defined segment length - to prioritize segment length
+        // and maintain similar geometry to node definitions, MD 4/2/19
+        currCentre[0] = nodeList[inletSegJoint][0] + loopEl*lengthByNodes/double(currSeg->getNumElements())*segVers[0][0];
+        currCentre[1] = nodeList[inletSegJoint][1] + loopEl*lengthByNodes/double(currSeg->getNumElements())*segVers[1][0];
+        currCentre[2] = nodeList[inletSegJoint][2] + loopEl*lengthByNodes/double(currSeg->getNumElements())*segVers[2][0];
+
+        // Get initial radius at current location
+        currIniArea = currSeg->getInitInletS() + (loopEl/double(currSeg->getNumElements()))*(currSeg->getInitOutletS() - currSeg->getInitInletS());
+        currIniRad = sqrt(currIniArea/M_PI);
+
+        // Loop on the subdivisions
+        for(int loopSubdiv=0;loopSubdiv<circSubdiv;loopSubdiv++){
+          currTheta = loopSubdiv*2*M_PI/double(circSubdiv);
+          tmp.clear();
+          tmp.push_back(currCentre[0] + currIniRad*segVers[0][1]*cos(currTheta) + currIniRad*segVers[0][2]*sin(currTheta));
+          tmp.push_back(currCentre[1] + currIniRad*segVers[1][1]*cos(currTheta) + currIniRad*segVers[1][2]*sin(currTheta));
+          tmp.push_back(currCentre[2] + currIniRad*segVers[2][1]*cos(currTheta) + currIniRad*segVers[2][2]*sin(currTheta));
+          segNodeList.push_back(tmp);
+        }
       }
-    }
 
-    // List of Node Coordinates ready for export
-    fprintf(vtkFile,"<Points>\n");
-    fprintf(vtkFile,"<DataArray type=\"Float32\" NumberOfComponents=\"3\" format=\"ascii\">\n");
-    for(int loopA=0;loopA<segNodeList.size();loopA++){
-      fprintf(vtkFile,"%e %e %e\n",segNodeList[loopA][0],segNodeList[loopA][1],segNodeList[loopA][2]);
-    }
-    fprintf(vtkFile,"</DataArray>\n");
-    fprintf(vtkFile,"</Points>\n");
-
-    // Write Strip Incidence and offset
-    fprintf(vtkFile,"<Strips>\n");
-    // Strip Connectivity
-    fprintf(vtkFile,"<DataArray type=\"Int32\" Name=\"connectivity\" format=\"ascii\">\n");
-    for(int loopA=0;loopA<currSeg->getNumElements();loopA++){
-      for(int loopB=0;loopB<circSubdiv;loopB++){
-        fprintf(vtkFile,"%d %d ",loopA*circSubdiv+loopB,loopA*circSubdiv+loopB+circSubdiv);
+      // List of Node Coordinates ready for export
+      fprintf(vtkFile,"<Points>\n");
+      fprintf(vtkFile,"<DataArray type=\"Float32\" NumberOfComponents=\"3\" format=\"ascii\">\n");
+      for(int loopA=0;loopA<segNodeList.size();loopA++){
+        fprintf(vtkFile,"%e %e %e\n",segNodeList[loopA][0]/scF,segNodeList[loopA][1]/scF,segNodeList[loopA][2]/scF);
       }
-      fprintf(vtkFile,"%d %d ",loopA*circSubdiv+0,loopA*circSubdiv+0+circSubdiv);
+      fprintf(vtkFile,"</DataArray>\n");
+      fprintf(vtkFile,"</Points>\n");
+
+      // Write Strip Incidence and offset
+      fprintf(vtkFile,"<Strips>\n");
+      // Strip Connectivity
+      fprintf(vtkFile,"<DataArray type=\"Int32\" Name=\"connectivity\" format=\"ascii\">\n");
+      for(int loopA=0;loopA<currSeg->getNumElements();loopA++){
+        for(int loopB=0;loopB<circSubdiv;loopB++){
+          fprintf(vtkFile,"%d %d ",loopA*circSubdiv+loopB,loopA*circSubdiv+loopB+circSubdiv);
+        }
+        fprintf(vtkFile,"%d %d ",loopA*circSubdiv+0,loopA*circSubdiv+0+circSubdiv);
+        fprintf(vtkFile,"\n");
+      }
+      fprintf(vtkFile,"</DataArray>\n");
+      // Strip Offset
+      fprintf(vtkFile,"<DataArray type=\"Int32\" Name=\"offsets\" format=\"ascii\">\n");
+      for(int loopA=0;loopA<currSeg->getNumElements();loopA++){
+        fprintf(vtkFile,"%d ",(loopA+1)*(circSubdiv*2+2));
+      }
       fprintf(vtkFile,"\n");
-    }
-    fprintf(vtkFile,"</DataArray>\n");
-    // Strip Offset
-    fprintf(vtkFile,"<DataArray type=\"Int32\" Name=\"offsets\" format=\"ascii\">\n");
-    for(int loopA=0;loopA<currSeg->getNumElements();loopA++){
-      fprintf(vtkFile,"%d ",(loopA+1)*(circSubdiv*2+2));
-    }
-    fprintf(vtkFile,"\n");
-    fprintf(vtkFile,"</DataArray>\n");
-    fprintf(vtkFile,"</Strips>\n");
+      fprintf(vtkFile,"</DataArray>\n");
+      fprintf(vtkFile,"</Strips>\n");
 
 
-    // PRINT OUTPUTS
-    fprintf(vtkFile,"<PointData Scalars=\"ScalOutputs\" Vectors=\"VecOutputs\">\n");
-
-    for(int loopTime=0;loopTime<step;loopTime++){
+      // PRINT OUTPUTS
+      fprintf(vtkFile,"<PointData Scalars=\"ScalOutputs\" Vectors=\"VecOutputs\">\n");
 
       // PRINT FLOW RATES
-      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Flowrate_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"1\" format=\"ascii\">\n",loopTime*saveIncr,loopTime*dt*saveIncr);
+      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Flowrate\" NumberOfComponents=\"1\" format=\"ascii\">\n");
       for(int j=startOut+1;j<finishOut;j+=2){
         for(int k=0;k<circSubdiv;k++){
           fprintf(vtkFile,"%e ",(double)TotalSolution[loopTime][j]);
@@ -474,7 +486,7 @@ void cpl1DType::postprocess_VTK_XML3D(string& path){
       fprintf(vtkFile,"</DataArray>\n");
 
       // PRINT AREA
-      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Area_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"1\" format=\"ascii\">\n",loopTime*saveIncr,loopTime*dt*saveIncr);
+      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Area\" NumberOfComponents=\"1\" format=\"ascii\">\n");
       for(int j=startOut;j<finishOut;j+=2){
         for(int k=0;k<circSubdiv;k++){
           fprintf(vtkFile,"%e ",(double)TotalSolution[loopTime][j]);
@@ -484,7 +496,7 @@ void cpl1DType::postprocess_VTK_XML3D(string& path){
       fprintf(vtkFile,"</DataArray>\n");
 
       // PRINT RADIAL DISPLACEMENTS AS VECTORS
-      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Disps_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"3\" format=\"ascii\">\n",loopTime*saveIncr,loopTime*dt*saveIncr);
+      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Disps\" NumberOfComponents=\"3\" format=\"ascii\">\n");
       for(int j=startOut;j<finishOut;j+=2){
 
         // Evaluate Initial Area at current location
@@ -508,9 +520,8 @@ void cpl1DType::postprocess_VTK_XML3D(string& path){
       fprintf(vtkFile,"</DataArray>\n");
 
       // PRINT PRESSURE IN MMHG
-      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Pressure_mmHg_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"1\" format=\"ascii\">\n",loopTime*saveIncr,loopTime*dt*saveIncr);
+      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Pressure_mmHg\" NumberOfComponents=\"1\" format=\"ascii\">\n");
       segLength = currSeg->getSegmentLength();
-      curMat = subdomainList[loopSegment]->GetMaterial();
       int section = 0;
       for(int j=startOut;j<finishOut;j+=2){
         z = (section/(double)currSeg->getNumElements())*segLength;
@@ -523,8 +534,7 @@ void cpl1DType::postprocess_VTK_XML3D(string& path){
       fprintf(vtkFile,"</DataArray>\n");
 
       // PRINT REYNOLDS NUMBER
-      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Reynolds_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"1\" format=\"ascii\">\n",loopTime*saveIncr,loopTime*dt*saveIncr);
-      curMat = subdomainList[loopSegment]->GetMaterial();
+      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Reynolds\" NumberOfComponents=\"1\" format=\"ascii\">\n");
       for(int j=startOut;j<finishOut;j+=2){
         // Get Flow
         flo = (double)TotalSolution[loopTime][j+1];
@@ -539,13 +549,13 @@ void cpl1DType::postprocess_VTK_XML3D(string& path){
       fprintf(vtkFile,"</DataArray>\n");
 
       // PRINT WSS
-      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"WSS_INCR_%05ld_TIME_%.5f\" NumberOfComponents=\"1\" format=\"ascii\">\n",loopTime*saveIncr,loopTime*dt*saveIncr);
-      curMat = subdomainList[loopSegment]->GetMaterial();
+      fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"WSS\" NumberOfComponents=\"1\" format=\"ascii\">\n");
       for(int j=startOut;j<finishOut;j+=2){
         // Get Flow
         flo = (double)TotalSolution[loopTime][j+1];
+        // Get Radius
         radius = sqrt((double)TotalSolution[loopTime][j]/M_PI);
-        // Get Area
+        // Get WSS
         wss = 4.0*curMat->GetDynamicViscosity()*flo/(M_PI*radius*radius*radius);
         for(int k=0;k<circSubdiv;k++){
           fprintf(vtkFile,"%e ",wss);
@@ -554,22 +564,21 @@ void cpl1DType::postprocess_VTK_XML3D(string& path){
       }
       fprintf(vtkFile,"</DataArray>\n");
 
-    }
-    fprintf(vtkFile,"</PointData>\n");
-    // Close Piece
-    fprintf(vtkFile,"</Piece>\n");
+      // Close Pointdata
+      fprintf(vtkFile,"</PointData>\n");
+      // Close Piece
+      fprintf(vtkFile,"</Piece>\n");
 
-    // Increment Segment Offset
-    segOffset += 2*(currSeg->getNumElements()+1);
+      // Increment Segment Offset
+      segOffset += 2*(totSegmentSolutions);
 
-  } // End Segment Loop
+    } // End Segment Loop
+    // Close
+    fprintf(vtkFile,"</PolyData>\n");
+    fprintf(vtkFile,"</VTKFile>\n");
+    fclose(vtkFile);
 
-  // Close
-  fprintf(vtkFile,"</PolyData>\n");
-  fprintf(vtkFile,"</VTKFile>\n");
-  printf("Results Exported to VTK File: %s\n",fileName);
 }
-*/
 
 // ====================
 // MAIN SOLUTION DRIVER
