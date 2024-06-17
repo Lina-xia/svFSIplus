@@ -353,7 +353,7 @@ void cpl1DType::postprocess_VTK(std::string& path,int& cTS, double& scF){
   double newArea = 0.0;
   double radDisp = 0.0;
   int loopTime = step; //只输出最后一个虚拟时间步的数据
-  cout << "step = " << step << endl;
+  // cout << "step = " << step << endl;
   cvStringVec fileList;
   string fileName;
 
