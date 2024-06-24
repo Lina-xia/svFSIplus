@@ -41,9 +41,6 @@
 #define EPSILON                  1.0e-10
 #define OUTPUT_PRECISION         12
 #define MAX_NONLINEAR_ITERATIONS 30
-#define Virtual_max_time_step    100
-#define Virtual_time_step_size   0.1
-#define Time_Pressure_Relative_Tolerations  1.0e-8
 
 #endif // CVONEDSOLVERDEFINITIONS_H
 

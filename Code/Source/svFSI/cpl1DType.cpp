@@ -1,7 +1,6 @@
 ///////////////////////
 // c p l 1 D T y p e //
 ///////////////////////
-
 # include <time.h>
 # include <iomanip> // 包含 std::setprecision 和 std::scientific 等操纵器
 
@@ -40,7 +39,10 @@ using namespace std;
 // Static Declarations...
 bool      cpl1DType::CreateCout = true;
 bool      cpl1DType::solverOptionDefined = false;
-// 需要广播的数据
+
+double    cpl1DType::dt = 0;
+int       cpl1DType::saveIncr = 0;
+int       cpl1DType::maxStep = 0;
 int       cpl1DType::quadPoints = 2;
 double    cpl1DType::convergenceTolerance = 1.0e-8;
 int       cpl1DType::useIV = 1;
@@ -114,6 +116,7 @@ void cpl1DType::postprocess_Text(string& path){
     // strcat(tmp6,"_wss.csv");
 
     ofstream flow,area,pressure,reynolds,wss,vecolity_flux; // for ASCII
+    cout << "step = " << step << endl;
 
     if(CreateFile){
       flow.open(tmp2, ios::out);
@@ -140,8 +143,7 @@ void cpl1DType::postprocess_Text(string& path){
 
     // Output the flow file
     for(j=startOut+1;j<finishOut;j+=2){
-        int i = step; //最后一个时间步的
-        flow << TotalSolution[i][j] << ",";
+        flow << TotalSolution[step][j] << ",";
     }
 
 
@@ -151,21 +153,20 @@ void cpl1DType::postprocess_Text(string& path){
 
     for(ii=0,j=startOut;ii<numEls+1 && j<finishOut;ii++,j+=2){
       double z = (ii/double(numEls))*segLength;
-      int i= step;
         //write area
-        Area = (double)TotalSolution[i][j];
+        Area = (double)TotalSolution[step][j];
         area << Area << ",";
 
         // Write Re
         r = sqrt(Area/M_PI);
-        flo = (double)TotalSolution[i][j+1];
-        //usual Re=rho/mu*D*velocity=rho/mu*Q*sqrt(4/Pi/Area)
-        Re = curMat->GetDensity()/curMat->GetDynamicViscosity()*flo/sqrt(Area)*sqrt(4.0/M_PI);
+        flo = (double)TotalSolution[step][j+1];
+        // // usual Re=rho/mu*D*velocity=rho/mu*Q*sqrt(4/Pi/Area)
+        // Re = curMat->GetDensity()/curMat->GetDynamicViscosity()*flo/sqrt(Area)*sqrt(4.0/M_PI);
         // reynolds << Re << ",";
 
         // Write pressure - Initial (CGS) Units
-        Pre = (double) curMat->GetPressure(TotalSolution[i][j],z);
-        pressure << curMat->GetPressure(TotalSolution[i][j],z) << ",";
+        Pre = (double) curMat->GetPressure(TotalSolution[step][j],z);
+        pressure << curMat->GetPressure(TotalSolution[step][j],z) << ",";
 
         // // write Wall Shear Stresses for Poiseuille flow
         // wssVal = (4.0*curMat->GetDynamicViscosity()*flo)/(M_PI*r*r*r);
@@ -352,8 +353,7 @@ void cpl1DType::postprocess_VTK(std::string& path,int& cTS, double& scF){
   double iniArea = 0.0;
   double newArea = 0.0;
   double radDisp = 0.0;
-  int loopTime = step; //只输出最后一个虚拟时间步的数据
-  // cout << "step = " << step << endl;
+  int loopTime = step;
   cvStringVec fileList;
   string fileName;
 
@@ -884,12 +884,7 @@ void cpl1DType::CalcInitProps(long ID){
   double zi = (zn - segLen)/(0.0-segLen);
   double Si = (zi*(So - Sn)) + Sn;
   (*previousSolution)[eqNumbers[0]] = Si;
-
-    if(node == 0){
-      (*previousSolution)[eqNumbers[1]] = Qo;
-    }else{
-      (*previousSolution)[eqNumbers[1]] = 0.0;
-    }
+  (*previousSolution)[eqNumbers[1]] = Qo;
   }
 }
 
@@ -898,17 +893,10 @@ void cpl1DType::CalcInitProps(long ID){
 // =================
 void cpl1DType::GenerateSolution(){
 
-  // // Print the formulation used
-  // if(cpl1DType::useIV){
-  //   cout << "Using Conservative Form ..." << endl;
-  // }else{
-  //   cout << "Using Advective Form ..." << endl;
-  // }
-
   // Allocate the TotalSolution Array.
-  TotalSolution.SetSize(Virtual_max_time_step +1, currentSolution -> GetDimension());
-  // cout << "Total Solution is: " << Virtual_max_time_step  << " x ";
-  // cout << currentSolution -> GetDimension() << endl;
+  long numSteps = maxStep/saveIncr;
+  TotalSolution.SetSize(numSteps+1, currentSolution -> GetDimension());
+  // cout << "Total Solution is: " << Virtual_max_time_step  << " x " << currentSolution -> GetDimension() << endl;
 
   previousSolution->Rename( "step_0");
   *currentSolution = *previousSolution;
@@ -923,6 +911,10 @@ void cpl1DType::GenerateSolution(){
     mathModels[i]->EquationInitialize(previousSolution, currentSolution);
   }
 
+}
+
+void cpl1DType::Nonlinear_iter(){
+
   //设置输出流及其精度
   std::ofstream outFile(cpl1DType::OutputFile, std::ios::app);
   std::cout << std::scientific << std::setprecision(3);
@@ -932,237 +924,189 @@ void cpl1DType::GenerateSolution(){
   char String2[] = "99999";
   cvOneDString title;
 
-  step = 1;
-  int iter_total = 0;
-  double toleration;
-  clock_t tstart;
-  clock_t tend;
-  double time_consumed_total;
+  int numMath = mathModels.size();
+  double currentTime = step * dt;
+  increment->Clear();
   
-  tstart=clock();
+  for(int i = 0; i < numMath; i++){ 
+    mathModels[i]->TimeUpdate(currentTime, dt);
+  }
 
-  while(true){
+  // Newton-Raphson Iterations...
+  int iter = 0;
+  double normf = 1.0;
+  double norms = 1.0;
+  clock_t tend_iter;
+  clock_t tstart_iter;
+  double timeConsumed;
 
-    int numMath = mathModels.size();
-    double currentTime = step * Virtual_time_step_size;
-    increment->Clear();
-    
-    for(int i = 0; i < numMath; i++){ 
-      mathModels[i]->TimeUpdate(currentTime, Virtual_time_step_size);
+  while(true){  //iter循环
+
+    tstart_iter=clock();
+      
+    for(int i = 0; i < numMath; i++){
+      mathModels[i]->FormNewton(lhs, rhs);
     }
 
-    // Newton-Raphson Iterations...
-    int iter = 0;
-    double normf = 1.0;
-    double norms = 1.0;
-    clock_t tend_iter;
-    clock_t tstart_iter;
-    double timeConsumed;
+    // PRINT RHS BEFORE BC APP
+    if(cvOneDGlobal::debugMode){
+      printf("(Debug) Printing LHS and RHS...\n");
+      ofstream ofsRHS;
+      ofstream ofsLHS;
+      ofsRHS.open("rhs_1.txt");
+      ofsLHS.open("lhs_1.txt");
+      ofsRHS<<" --- RHS: Before ApplyBoundaryConditions" << endl;
+      rhs->print(ofsRHS);
+      ofsLHS<<" --- LHS: Before ApplyBoundaryConditions" << endl;
+      lhs->print(ofsLHS);
+      ofsRHS.close();
+      ofsLHS.close();
+      printf("ECCOLO\n");
+      getchar();
+    }
 
-    while(true){  //iter循环
+    mathModels[0]->ApplyBoundaryConditions();
 
-      tstart_iter=clock();
-        
-      for(int i = 0; i < numMath; i++){
-        mathModels[i]->FormNewton(lhs, rhs);
-      }
+    // PRINT RHS AFTER BC APP
+    if(cvOneDGlobal::debugMode){
+      cout<<" --- RHS: After Application of BC " << endl;
+      rhs->print(cout);
+    }
 
-      // PRINT RHS BEFORE BC APP
-      if(cvOneDGlobal::debugMode){
-        printf("(Debug) Printing LHS and RHS...\n");
-        ofstream ofsRHS;
-        ofstream ofsLHS;
-        ofsRHS.open("rhs_1.txt");
-        ofsLHS.open("lhs_1.txt");
-        ofsRHS<<" --- RHS: Before ApplyBoundaryConditions" << endl;
-        rhs->print(ofsRHS);
-        ofsLHS<<" --- LHS: Before ApplyBoundaryConditions" << endl;
-        lhs->print(ofsLHS);
-        ofsRHS.close();
-        ofsLHS.close();
-        printf("ECCOLO\n");
-        getchar();
-      }
+    // Do not evaluate residuals of lagrange eqns
+    if(jointList.size() != 0){
+      normf = rhs->Norm(L2_norm,1,2, jointList[0]->GetGlobal1stLagNodeID());
+      norms = rhs->Norm(L2_norm,0,2, jointList[0]->GetGlobal1stLagNodeID());
+    }else{
+      normf = rhs->Norm(L2_norm,1,2);
+      norms = rhs->Norm(L2_norm,0,2);
+    }
 
-      mathModels[0]->ApplyBoundaryConditions();
+    if (std::isnan(norms) || std::isnan(normf)) {
+        throw cvException("Calculated a NaN for the residual.");
+    }
+    
+    if (iter > 0) {
+      outFile << "[" << outletName << "]: " << step << "-" << iter << "  " << normf << "  " << norms << "  " << timeConsumed << endl;
+      cout << "[" << outletName << "]: " << step << "-" << iter << "  " << normf << "  " << norms << "  " << timeConsumed << endl;
+    }
+    
+    // Check Newton-Raphson Convergence
+    if((currentTime != dt || (currentTime == dt && iter != 0)) && normf < cpl1DType::convergenceTolerance && norms < cpl1DType::convergenceTolerance){
+      outFile << "----------------------------------------------------" << endl;
+      break;
+    }
 
-      // PRINT RHS AFTER BC APP
-      if(cvOneDGlobal::debugMode){
-        cout<<" --- RHS: After Application of BC " << endl;
-        rhs->print(cout);
-      }
+    // if((currentTime != dt || (currentTime == dt && iter != 0)) && normf < cpl1DType::convergenceTolerance && norms < cpl1DType::convergenceTolerance){
+    //   tend_iter=clock();
+    //   timeConsumed = ((float)(tend_iter-tstart_iter))/CLOCKS_PER_SEC;
+    //   outFile << "[" << outletName << "]: " << step << "-" << iter << "  " << normf << "  " << norms << "  " << timeConsumed << endl;
+    //   break;
+    // }
 
-      // Do not evaluate residuals of lagrange eqns
-      if(jointList.size() != 0){
-        normf = rhs->Norm(L2_norm,1,2, jointList[0]->GetGlobal1stLagNodeID());
-        norms = rhs->Norm(L2_norm,0,2, jointList[0]->GetGlobal1stLagNodeID());
-      }else{
-        normf = rhs->Norm(L2_norm,1,2);
-        norms = rhs->Norm(L2_norm,0,2);
-      }
+    // Add increment
+    increment->Clear();
 
-      if (std::isnan(norms) || std::isnan(normf)) {
-          throw cvException("Calculated a NaN for the residual.");
-      }
-      
-      // Check Newton-Raphson Convergence
-      if((currentTime != Virtual_time_step_size || (currentTime == Virtual_time_step_size && iter != 0)) && normf < cpl1DType::convergenceTolerance && norms < cpl1DType::convergenceTolerance){
-        tend_iter=clock();
-        timeConsumed = ((float)(tend_iter-tstart_iter))/CLOCKS_PER_SEC;
-        outFile << "[" << outletName << "]: " << step << "-" << iter << "  " << normf << "  " << norms << "  " << timeConsumed << endl;
-        break;
-      }
+    // cvOneDGlobal::solver->Solve(*increment);
+    mathModels[0]->solver->Solve(*increment);
 
-      // Add increment
-      increment->Clear();
+    currentSolution->Add(*increment);
 
-      // cvOneDGlobal::solver->Solve(*increment);
-      mathModels[0]->solver->Solve(*increment);
-
-      currentSolution->Add(*increment);
-
-      // If the area goes less than zero, it tells in which segment the error occurs.
-      // Assumes that all the lagrange multipliers are at the end of the vector.
-      int negArea=0;
-      if(jointList.size() != 0){
-        for (long i= 0; i< jointList[0]->GetGlobal1stLagNodeID();i+=2){
-          long elCount = 0;
-          int fileIter = 0;
-          //check if area <0 or =nan
-          if (currentSolution->Get(i) < 0.0 || (currentSolution->Get(i) != currentSolution->Get(i))){
-            negArea=1;
-            while (fileIter < model -> getNumberOfSegments()){
-              cvOneDSegment *curSeg = model -> getSegment(fileIter);
-              long numEls = curSeg -> getNumElements();
-              long startOut = elCount;
-              long finishOut = elCount + ((numEls+1)*2);
-              char *modelname;
-              char *segname;
-              if (startOut <= i && i <= finishOut) {
-                  modelname = model-> getModelName();
-                  segname = curSeg -> getSegmentName();
-                  std::string msg = "ERROR: The area of segment '" + std::string(segname) + "' is negative.";
-                  throw cvException(msg.c_str());
-              }
-              elCount += 2*(numEls+1);
-              fileIter++;
-              }
+    // If the area goes less than zero, it tells in which segment the error occurs.
+    // Assumes that all the lagrange multipliers are at the end of the vector.
+    int negArea=0;
+    if(jointList.size() != 0){
+      for (long i= 0; i< jointList[0]->GetGlobal1stLagNodeID();i+=2){
+        long elCount = 0;
+        int fileIter = 0;
+        //check if area <0 or =nan
+        if (currentSolution->Get(i) < 0.0 || (currentSolution->Get(i) != currentSolution->Get(i))){
+          negArea=1;
+          while (fileIter < model -> getNumberOfSegments()){
+            cvOneDSegment *curSeg = model -> getSegment(fileIter);
+            long numEls = curSeg -> getNumElements();
+            long startOut = elCount;
+            long finishOut = elCount + ((numEls+1)*2);
+            char *modelname;
+            char *segname;
+            if (startOut <= i && i <= finishOut) {
+                modelname = model-> getModelName();
+                segname = curSeg -> getSegmentName();
+                std::string msg = "ERROR: The area of segment '" + std::string(segname) + "' is negative.";
+                throw cvException(msg.c_str());
+            }
+            elCount += 2*(numEls+1);
+            fileIter++;
             }
           }
         }
-
-      if(negArea==1) {
-      std::string emptyString;
-      postprocess_Text(emptyString);
-      assert(0);
       }
 
-      if(cvOneDGlobal::debugMode){
-        printf("(Debug) Printing Solution...\n");
-        ofstream ofs("solution.txt");
-        for(int loopA=0;loopA<currentSolution->GetDimension();loopA++){
-          ofs << to_string(loopA) << " " << currentSolution->Get(numMath) << endl;
-        }
-        ofs.close();
-        getchar();
+    if(negArea==1) {
+    std::string emptyString;
+    postprocess_Text(emptyString);
+    assert(0);
+    }
+
+    if(cvOneDGlobal::debugMode){
+      printf("(Debug) Printing Solution...\n");
+      ofstream ofs("solution.txt");
+      for(int loopA=0;loopA<currentSolution->GetDimension();loopA++){
+        ofs << to_string(loopA) << " " << currentSolution->Get(numMath) << endl;
       }
+      ofs.close();
+      getchar();
+    }
 
 
-      // A flag in case the cross sectional area is negative, but don't want to include the lagrange multipliers
-      // Assumes that all the lagrange multipliers are at the end of the vector
-      if(jointList.size() != 0){
-        currentSolution->CheckPositive(0,2,jointList[0]->GetGlobal1stLagNodeID());
-      }else{
-        currentSolution->CheckPositive(0,2,currentSolution->GetDimension());
-      }
+    // A flag in case the cross sectional area is negative, but don't want to include the lagrange multipliers
+    // Assumes that all the lagrange multipliers are at the end of the vector
+    if(jointList.size() != 0){
+      currentSolution->CheckPositive(0,2,jointList[0]->GetGlobal1stLagNodeID());
+    }else{
+      currentSolution->CheckPositive(0,2,currentSolution->GetDimension());
+    }
 
-      // Set Boundary Conditions
-      // cvOneDMthModelBase::CurrentInletFlow = flowEachTime;
-      mathModels[0]->CurrentInletFlow = flowEachTime;
-      mathModels[0]->SetBoundaryConditions();
+    // Set Boundary Conditions
+    // cvOneDMthModelBase::CurrentInletFlow = flowEachTime;
+    mathModels[0]->CurrentInletFlow = flowEachTime;
+    mathModels[0]->SetBoundaryConditions();
 
-      if(iter > MAX_NONLINEAR_ITERATIONS){
-        outFile << "Error: Newton not converged, exceed max iterations" << endl;
-        outFile << "norm of Flow rate:" << normf << ", norm of Area:" << norms << endl;
-        outFile << "----------------------------------------------------" << endl;
-        break;
-      }
+    tend_iter=clock();
+    timeConsumed = ((float)(tend_iter-tstart_iter))/CLOCKS_PER_SEC;
 
-      iter++;
-    }// End linear while
+    if(iter > MAX_NONLINEAR_ITERATIONS){
+      outFile << "Error: Newton not converged, exceed max iterations" << endl;
+      outFile << "norm of Flow rate:" << normf << ", norm of Area:" << norms << endl;
+      outFile << "----------------------------------------------------" << endl;
 
+      cout << "Error: Newton not converged, exceed max iterations" << endl;
+      cout << "norm of Flow rate:" << normf << ", norm of Area:" << norms << endl;
+      break;
+    }
+
+    iter++;
+  }// End linear while
+
+  double *tmp = currentSolution -> GetEntries();
+  cvOneDMaterial* threeDInterface = subdomainList[0]->GetMaterial();
+  preFrom1DEachTime = threeDInterface->GetPressure(*tmp ,0);  //压强计算并输入
+  cout << "preFrom1DEachTime = " << preFrom1DEachTime << endl;
+
+  // Save solution if needed
+  if(step % saveIncr == 0){
     sprintf( String2, "%ld", (unsigned long)step);
     title = String1 + String2;
     currentSolution->Rename(title.data());
 
-    double * tmp = currentSolution -> GetEntries();
     for(int j=0;j<currentSolution -> GetDimension(); j++){
       TotalSolution[step][j] = tmp[j];
     }
+  }
 
-    *previousSolution = *currentSolution;
-    iter_total += iter;
-
-    if(step > 1){
-      long dimension = currentSolution -> GetDimension();
-      cvOneDMaterial* curMat = subdomainList[0]->GetMaterial();
-      double preCurrent = (double) curMat->GetPressure((double)TotalSolution[step][0],0); //第0个点最后一个时间步的面积
-      double preBefore = (double) curMat->GetPressure((double)TotalSolution[step-1][0],0);
-      // cout << preCurrent << endl;
-      // cout << preBefore << endl;
-      toleration = std::abs((preCurrent - preBefore)/preBefore);
-      
-      if( toleration < Time_Pressure_Relative_Tolerations || step == Virtual_max_time_step){
-        tend=clock();
-        time_consumed_total = ((float)(tend-tstart))/CLOCKS_PER_SEC;
-        cout << "[" << outletName << "]: " << step << "-" << iter_total << "  " << toleration << "  " << time_consumed_total << endl;
-        outFile << "--------------------------------------------------------------" << endl;
-        preFrom1DEachTime = preCurrent;  //输出第一个点的压强给三维
-        break;
-      }
-    }
-    step ++;
-  
-  } // End nonlinear loop
-
+  *previousSolution = *currentSolution;
   outFile.close();
-}
-
-
-/* Copyright (c) Stanford University, The Regents of the University of
- *               California, and others.
- *
- * All Rights Reserved.
- *
- * See Copyright-SimVascular.txt for additional details.
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject
- * to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
- * IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
- * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
- * PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
- * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-#include "cpl1DType.h"
-
-using namespace std;
+} // End nonlinear loop
 
 // ====================================
 // GET DATA TABLE ENTRY FROM STRING KEY

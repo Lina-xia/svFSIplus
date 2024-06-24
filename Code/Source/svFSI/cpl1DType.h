@@ -20,8 +20,11 @@ using namespace std;
 class cpl1DType
 {
   public:
-
     //静态变量表示所有的出口共享这些数据
+    static double   dt;  //comMod.dt
+    static int      saveIncr;  //comMod.saveIncr
+    static int      maxStep;   //comMod.nTS
+
     static bool     CreateCout;
     static string   OutputFile;
     // SOLVER OPTIONS
@@ -44,6 +47,7 @@ class cpl1DType
     static int    outputType;    //0表示TEXT，1表示VTP
 
     //非静态变量，具有出口特异性
+    int  step;
     cvOneDOptions opts;
     cvOneDModel   *model;  // Pointer to the Model
     string        outletName;
@@ -51,6 +55,7 @@ class cpl1DType
     double        flowEachTime;
     double        preFrom1DEachTime;
     bool          wasSet = false;
+    vector<double> nv_age;
 
     // Solve the blood flow problem
     void readSharedVar();
@@ -61,6 +66,7 @@ class cpl1DType
     void createModel();
     void readModelFile(cvStringVec includedFiles);
     void readModel();
+    void Nonlinear_iter();
 
     // Result Output
     void postprocess_Text(std::string& path);
@@ -74,7 +80,7 @@ class cpl1DType
 
  private:
 
-    int  step;  //所走的虚拟时间步
+
     bool CreateFile = true;
     vector<cvOneDSubdomain*> subdomainList;
     vector<cvOneDFEAJoint*> jointList;

@@ -221,9 +221,13 @@ void read_bc(Simulation* simulation, EquationParameters* eq_params, eqType& lEq,
     //保证if只执行一次，避免cout输出多次
     if (cpl1DType::CreateCout){
 
-      cout << "-----------------------------------------------------------------------" << endl;
-      cout << "[outletName]: TotalSteps-TotalIters  RelativeToleration  TimeConsumed" << endl;
-      cout << "------------------------------------------------------------------------" << endl;
+      cpl1DType::dt = simulation->com_mod.dt;
+      cpl1DType::saveIncr = simulation->com_mod.saveIncr;
+      cpl1DType::maxStep = simulation->com_mod.nTS;
+
+      cout << "----------------------------------------------------" << endl;
+      cout << "[outletName]: step-iter  normf  norms  time_consumed" << endl;
+      cout << "----------------------------------------------------" << endl;
       
       auto& chnl_mod = simulation->chnl_mod;
       if (chnl_mod.appPath != "" ) { 
@@ -231,10 +235,10 @@ void read_bc(Simulation* simulation, EquationParameters* eq_params, eqType& lEq,
         std::system(mkdir_arg.c_str());
         cpl1DType::OutputFile = chnl_mod.appPath + "/" + cpl1DType::OutputFile;  
       }
-      std::ofstream outFile(cpl1DType::OutputFile); //打开文件
-      outFile << "---------------------------------------------------------------" << endl;
-      outFile << "[outletName]: Step-ThisStepIters  Normf  Norms  TimeConsumed" << endl;
-      outFile << "---------------------------------------------------------------" << endl;
+      std::ofstream outFile(cpl1DType::OutputFile);
+      outFile << "----------------------------------------------------" << endl;
+      outFile << "[outletName]: step-iter  normf  norms  time_consumed" << endl;
+      outFile << "----------------------------------------------------" << endl;
       outFile.close();
       cpl1DType::CreateCout = false;
     }

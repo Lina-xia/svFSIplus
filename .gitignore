@@ -33,3 +33,4 @@ build*
 tests/
 my_test/
 *.out
+branch/

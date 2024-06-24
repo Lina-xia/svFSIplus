@@ -113,13 +113,21 @@ void Couple1D(Simulation* simulation)
 
           cpl1D.flowEachTime = all_fun::integ(com_mod, cm_mod, Fa, com_mod.Yn, eq.s, eq.s + com_mod.nsd-1);
           if (Fa.nNo != 0){
-
-            //第一个时间步预处理
             if (com_mod.cTS == 1){
                 cpl1D.readModel();
                 opts.check();
                 cpl1D.createModel();       //怎么判断在接口处三维一维是否相接
+                cpl1D.GenerateSolution();
                 
+                // 每个点的法向量其实有细微出入, 取平均值带入
+                cpl1D.nv_age.resize(com_mod.nsd);
+                for (int i = 0; i < com_mod.nsd; i++){
+                  for (int j = 0; j < Fa.nNo; j++){
+                    cpl1D.nv_age[i] += Fa.nV(i,j);
+                  }
+                  cpl1D.nv_age[i] = cpl1D.nv_age[i] / Fa.nNo;
+                }
+
             }
 
             #ifdef debug_Couple1D
@@ -129,30 +137,20 @@ void Couple1D(Simulation* simulation)
               dmsg << ">>> Fa.nNo: " << Fa.nNo;
               dmsg << ">>> flowEachTime: " << cpl1D.flowEachTime;
             #endif
-            cpl1D.GenerateSolution();
-            
-            // 每个点的法向量其实有细微出入, 取平均值带入
-            // nv_age方便查看debug
-            Vector<double> nv(com_mod.nsd);
-            Vector<double> nv_age(com_mod.nsd);
-            for (int i = 0; i < com_mod.nsd; i++){
-              for (int j = 0; j < Fa.nNo; j++){
-                nv(i) += Fa.nV(i,j);  //所有点n_i的和
-              }
-              nv_age(i) = nv(i) / Fa.nNo;
-              bc.h(i) =  - cpl1D.preFrom1DEachTime * nv_age(i);
-            }
+
+            cpl1D.step = com_mod.cTS;
+            cpl1D.Nonlinear_iter();
+            for (int i = 0; i < com_mod.nsd; i++) bc.h(i) =  - cpl1D.preFrom1DEachTime * cpl1D.nv_age[i];
 
             #ifdef debug_Couple1D
             dmsg << ">>> preFrom1DEachTime: " << cpl1D.preFrom1DEachTime;
-            dmsg << ">>> nV_age: " << nv_age;
+            dmsg << ">>> nV_age: " << cpl1D.nv_age;
             dmsg << ">>> h: " << bc.h;
             #endif
 
-            // //不需要输出
             if (com_mod.cTS % com_mod.saveIncr == 0){ 
+              //设置输出路径
               std::string path = simulation->chnl_mod.appPath + "/";
-              // cout << "cpl1DType::outputType = " << cpl1DType::outputType << endl;
               if(cpl1DType::outputType == OutputTypeScope::OUTPUT_TEXT){
                 cpl1D.postprocess_Text(path);
               }else if(cpl1DType::outputType == OutputTypeScope::OUTPUT_VTK){

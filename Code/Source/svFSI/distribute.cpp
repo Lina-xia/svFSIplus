@@ -600,6 +600,9 @@ void dist_bc(ComMod& com_mod, const CmMod& cm_mod, const cmType& cm, bcType& lBc
     cm.bcast(cm_mod, lBc.cpl1D.outletName);
     cm.bcast(cm_mod, lBc.cpl1D.inputFile);
     //一维共用数据广播
+    cm.bcast(cm_mod, &cpl1DType::dt);
+    cm.bcast(cm_mod, &cpl1DType::saveIncr);
+    cm.bcast(cm_mod, &cpl1DType::maxStep);
     cm.bcast(cm_mod, cpl1DType::OutputFile);
     cm.bcast(cm_mod, &cpl1DType::quadPoints);
     cm.bcast(cm_mod, &cpl1DType::convergenceTolerance);
@@ -609,7 +612,6 @@ void dist_bc(ComMod& com_mod, const CmMod& cm_mod, const cmType& cm, bcType& lBc
 
     int size = cpl1DType::materialDensity.size();
     cm.bcast(cm_mod, &size);
-    // dmsg << "size = " << size << endl;
     if (task_id != cm_mod.master) {
       // 其他进程缓冲区大小与主进程相同
       cpl1DType::materialName.resize(size);
