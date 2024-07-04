@@ -116,7 +116,6 @@ void cpl1DType::postprocess_Text(string& path){
     // strcat(tmp6,"_wss.csv");
 
     ofstream flow,area,pressure,reynolds,wss,vecolity_flux; // for ASCII
-    cout << "step = " << step << endl;
 
     if(CreateFile){
       flow.open(tmp2, ios::out);
@@ -688,9 +687,11 @@ void cpl1DType::QuerryModelInformation(void)
       double dQ0_dT = 0.0;
       if(i == 0) {
         Qo = seg->getInitialFlow();
-        P0 =  seg->getInitialPressure();
-        dQ0_dT = 0.0;
+        // P0 =  seg->getInitialPressure();  //初始压强都没给过
       }
+      cout << "Qo = " << Qo << endl;
+      cout << "P0 = " << P0 << endl;
+
       double So = seg->getInitInletS();
       double Sn = seg->getInitOutletS();
       BoundCondType boundT = seg -> getBoundCondition();
@@ -997,13 +998,6 @@ void cpl1DType::Nonlinear_iter(){
       break;
     }
 
-    // if((currentTime != dt || (currentTime == dt && iter != 0)) && normf < cpl1DType::convergenceTolerance && norms < cpl1DType::convergenceTolerance){
-    //   tend_iter=clock();
-    //   timeConsumed = ((float)(tend_iter-tstart_iter))/CLOCKS_PER_SEC;
-    //   outFile << "[" << outletName << "]: " << step << "-" << iter << "  " << normf << "  " << norms << "  " << timeConsumed << endl;
-    //   break;
-    // }
-
     // Add increment
     increment->Clear();
 
@@ -1058,7 +1052,6 @@ void cpl1DType::Nonlinear_iter(){
       getchar();
     }
 
-
     // A flag in case the cross sectional area is negative, but don't want to include the lagrange multipliers
     // Assumes that all the lagrange multipliers are at the end of the vector
     if(jointList.size() != 0){
@@ -1091,17 +1084,14 @@ void cpl1DType::Nonlinear_iter(){
   double *tmp = currentSolution -> GetEntries();
   cvOneDMaterial* threeDInterface = subdomainList[0]->GetMaterial();
   preFrom1DEachTime = threeDInterface->GetPressure(*tmp ,0);  //压强计算并输入
-  cout << "preFrom1DEachTime = " << preFrom1DEachTime << endl;
+  // cout << "preFrom1DEachTime = " << preFrom1DEachTime << endl;
 
-  // Save solution if needed
-  if(step % saveIncr == 0){
-    sprintf( String2, "%ld", (unsigned long)step);
-    title = String1 + String2;
-    currentSolution->Rename(title.data());
-
-    for(int j=0;j<currentSolution -> GetDimension(); j++){
-      TotalSolution[step][j] = tmp[j];
-    }
+  // Save solution every step
+  sprintf( String2, "%ld", (unsigned long)step);
+  title = String1 + String2;
+  currentSolution->Rename(title.data());
+  for(int j=0;j<currentSolution -> GetDimension(); j++){
+    TotalSolution[step][j] = tmp[j];
   }
 
   *previousSolution = *currentSolution;

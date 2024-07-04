@@ -87,14 +87,13 @@ void read_files(Simulation* simulation, const std::string& file_name)
   
 }
 
-void Couple1D(Simulation* simulation)
-{
+void Couple1D(Simulation* simulation) {
   using namespace consts;
   auto& com_mod = simulation->com_mod;
   auto& cm_mod = simulation->cm_mod;
   auto& cm = com_mod.cm;
 
-  #define n_debug_Couple1D
+  #define debug_Couple1D
   #ifdef debug_Couple1D
   DebugMsg dmsg(__func__, com_mod.cm.idcm());
   #endif
@@ -118,14 +117,14 @@ void Couple1D(Simulation* simulation)
                 opts.check();
                 cpl1D.createModel();       //怎么判断在接口处三维一维是否相接
                 cpl1D.GenerateSolution();
-                
+
                 // 每个点的法向量其实有细微出入, 取平均值带入
                 cpl1D.nv_age.resize(com_mod.nsd);
                 for (int i = 0; i < com_mod.nsd; i++){
                   for (int j = 0; j < Fa.nNo; j++){
-                    cpl1D.nv_age[i] += Fa.nV(i,j);
+                    cpl1D.nv_age(i) += Fa.nV(i,j);
                   }
-                  cpl1D.nv_age[i] = cpl1D.nv_age[i] / Fa.nNo;
+                  cpl1D.nv_age(i) = cpl1D.nv_age(i) / Fa.nNo;
                 }
 
             }
@@ -134,33 +133,31 @@ void Couple1D(Simulation* simulation)
               dmsg.banner();
               dmsg << ">>> iBc: " << iBc; 
               dmsg << ">>> name: " << Fa.name;
-              dmsg << ">>> Fa.nNo: " << Fa.nNo;
+              // dmsg << ">>> Fa.nNo: " << Fa.nNo;
               dmsg << ">>> flowEachTime: " << cpl1D.flowEachTime;
             #endif
 
             cpl1D.step = com_mod.cTS;
             cpl1D.Nonlinear_iter();
-            for (int i = 0; i < com_mod.nsd; i++) bc.h(i) =  - cpl1D.preFrom1DEachTime * cpl1D.nv_age[i];
+            cout << "Non_right." << endl;
+            for (int i = 0; i < com_mod.nsd; i++) bc.h(i) =  - cpl1D.preFrom1DEachTime * cpl1D.nv_age(i);
 
             #ifdef debug_Couple1D
             dmsg << ">>> preFrom1DEachTime: " << cpl1D.preFrom1DEachTime;
             dmsg << ">>> nV_age: " << cpl1D.nv_age;
-            dmsg << ">>> h: " << bc.h;
+            // dmsg << ">>> h: " << bc.h;
             #endif
-
-            if (com_mod.cTS % com_mod.saveIncr == 0){ 
-              //设置输出路径
-              std::string path = simulation->chnl_mod.appPath + "/";
-              if(cpl1DType::outputType == OutputTypeScope::OUTPUT_TEXT){
-                cpl1D.postprocess_Text(path);
-              }else if(cpl1DType::outputType == OutputTypeScope::OUTPUT_VTK){
-                cpl1D.postprocess_VTK(path, com_mod.cTS, mesh.scF);
-              }else if(cpl1DType::outputType == OutputTypeScope::OUTPUT_BOTH){
-                cpl1D.postprocess_Text(path);
-                cpl1D.postprocess_VTK(path, com_mod.cTS, mesh.scF);
-              }
-            }
             
+            std::string path = simulation->chnl_mod.appPath + "/";
+            //TEXT文件是一步一输出
+            if(cpl1DType::outputType == OutputTypeScope::OUTPUT_TEXT || cpl1DType::outputType == OutputTypeScope::OUTPUT_BOTH){
+                cpl1D.postprocess_Text(path);
+            }
+            //VTK文件的输出和三维的VTK输出间隔一致
+            if( (com_mod.cTS % com_mod.saveIncr == 0) && (cpl1DType::outputType == OutputTypeScope::OUTPUT_VTK ||    cpl1DType::outputType == OutputTypeScope::OUTPUT_BOTH) ){
+                cpl1D.postprocess_VTK(path, com_mod.cTS, mesh.scF);
+            }
+
           }
         }
         MPI_Barrier(MPI_COMM_WORLD);

@@ -8,6 +8,7 @@
 # include <cstdio>
 # include <math.h>
 
+# include "Vector.h"
 # include "cvOneDTypes.h"
 # include "cvOneDModel.h"
 # include "cvOneDSubdomain.h"
@@ -55,7 +56,7 @@ class cpl1DType
     double        flowEachTime;
     double        preFrom1DEachTime;
     bool          wasSet = false;
-    vector<double> nv_age;
+    Vector<double> nv_age;
 
     // Solve the blood flow problem
     void readSharedVar();

@@ -445,6 +445,9 @@ void ns_solver(fsi_linear_solver::FSILS_lhsType& lhs, fsi_linear_solver::FSILS_l
   dmsg << "ls.Resm: " << ls.Resm;
   dmsg << "ls.RI.itr: " << ls.RI.itr;
   #endif
+  // std::cout << "ls.Resc: " << ls.Resc << std::endl;
+  // std::cout << "ls.Resm: " << ls.Resm << std::endl;
+  // std::cout << "ls.RI.itr: " << ls.RI.itr << std::endl;
 
   Rmi = xB(1) * U.slice(0);
   Rci = xB(0) * P.col(0);
@@ -461,16 +464,16 @@ void ns_solver(fsi_linear_solver::FSILS_lhsType& lhs, fsi_linear_solver::FSILS_l
 
   ls.RI.dB = 5.0 * log(ls.RI.fNorm / ls.RI.dB);
 
-  if (ls.Resc < 0.0 || ls.Resm < 0.0) {
-    ls.Resc = 0;
-    ls.Resm = 0;
-    ls.RI.dB = 0;
-    ls.RI.fNorm = 0.0;
+  // if (ls.Resc < 0.0 || ls.Resm < 0.0) {
+  //   ls.Resc = 0;
+  //   ls.Resm = 0;
+  //   ls.RI.dB = 0;
+  //   ls.RI.fNorm = 0.0;
 
-    if (lhs.commu.masF) {
-      throw std::runtime_error("FSILS: unexpected behavior in FSILS (likely due to the ill-conditioned LHS matrix)"); 
-    }
-  }
+  //   if (lhs.commu.masF) {
+  //     throw std::runtime_error("FSILS: unexpected behavior in FSILS (likely due to the ill-conditioned LHS matrix)"); 
+  //   }
+  // }
 
   ls.RI.fNorm = sqrt(ls.RI.fNorm);
   #ifdef debug_ns_solver

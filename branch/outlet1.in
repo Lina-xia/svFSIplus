@@ -62,8 +62,8 @@ ENDDATATABLE
 # - Material Parameter 2 (double)
 # - Material Parameter 3 (double)
 
-MATERIAL MAT1 OLUFSEN 1.06 0.04 0.0 1.0 20000000.0 -22.5267 865000.0
-
+# MATERIAL MAT1 OLUFSEN 1.06 0.04 0.0 1.0 20000000.0 -22.5267 865000.0
+MATERIAL MAT1 OLUFSEN 1.06 0.04 0.0 2.0 1.0e15 -20 1e9
 # ==================
 # SOLVEROPTIONS CARD
 # ==================
