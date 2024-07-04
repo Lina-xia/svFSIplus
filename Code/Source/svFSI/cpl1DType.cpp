@@ -689,8 +689,8 @@ void cpl1DType::QuerryModelInformation(void)
         Qo = seg->getInitialFlow();
         // P0 =  seg->getInitialPressure();  //初始压强都没给过
       }
-      cout << "Qo = " << Qo << endl;
-      cout << "P0 = " << P0 << endl;
+      // cout << "Qo = " << Qo << endl;
+      // cout << "P0 = " << P0 << endl;
 
       double So = seg->getInitInletS();
       double Sn = seg->getInitOutletS();
@@ -895,9 +895,8 @@ void cpl1DType::CalcInitProps(long ID){
 void cpl1DType::GenerateSolution(){
 
   // Allocate the TotalSolution Array.
-  long numSteps = maxStep/saveIncr;
-  TotalSolution.SetSize(numSteps+1, currentSolution -> GetDimension());
-  // cout << "Total Solution is: " << Virtual_max_time_step  << " x " << currentSolution -> GetDimension() << endl;
+  TotalSolution.SetSize(maxStep+1, currentSolution -> GetDimension());
+  // cout << "Total Solution is: " << maxStep  << " x " << currentSolution -> GetDimension() << endl;
 
   previousSolution->Rename( "step_0");
   *currentSolution = *previousSolution;
@@ -1085,12 +1084,12 @@ void cpl1DType::Nonlinear_iter(){
   cvOneDMaterial* threeDInterface = subdomainList[0]->GetMaterial();
   preFrom1DEachTime = threeDInterface->GetPressure(*tmp ,0);  //压强计算并输入
   // cout << "preFrom1DEachTime = " << preFrom1DEachTime << endl;
-
+  
   // Save solution every step
   sprintf( String2, "%ld", (unsigned long)step);
   title = String1 + String2;
   currentSolution->Rename(title.data());
-  for(int j=0;j<currentSolution -> GetDimension(); j++){
+  for(int j=0;j< currentSolution -> GetDimension(); j++){
     TotalSolution[step][j] = tmp[j];
   }
 

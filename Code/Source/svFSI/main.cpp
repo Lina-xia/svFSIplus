@@ -93,7 +93,7 @@ void Couple1D(Simulation* simulation) {
   auto& cm_mod = simulation->cm_mod;
   auto& cm = com_mod.cm;
 
-  #define debug_Couple1D
+  #define n_debug_Couple1D
   #ifdef debug_Couple1D
   DebugMsg dmsg(__func__, com_mod.cm.idcm());
   #endif
@@ -139,7 +139,6 @@ void Couple1D(Simulation* simulation) {
 
             cpl1D.step = com_mod.cTS;
             cpl1D.Nonlinear_iter();
-            cout << "Non_right." << endl;
             for (int i = 0; i < com_mod.nsd; i++) bc.h(i) =  - cpl1D.preFrom1DEachTime * cpl1D.nv_age(i);
 
             #ifdef debug_Couple1D
