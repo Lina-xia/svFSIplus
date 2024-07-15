@@ -116,6 +116,7 @@ void Couple1D(Simulation* simulation) {
                 cpl1D.readModel();
                 opts.check();
                 cpl1D.createModel();       //怎么判断在接口处三维一维是否相接
+                cpl1D.prepro();
                 cpl1D.GenerateSolution();
 
                 // 每个点的法向量其实有细微出入, 取平均值带入
@@ -126,7 +127,6 @@ void Couple1D(Simulation* simulation) {
                   }
                   cpl1D.nv_age(i) = cpl1D.nv_age(i) / Fa.nNo;
                 }
-
             }
 
             #ifdef debug_Couple1D

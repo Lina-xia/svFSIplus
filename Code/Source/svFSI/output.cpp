@@ -97,7 +97,7 @@ void output_result(Simulation* simulation,  std::array<double,3>& timeP, const i
   //
   timeP[2] = tmp - timeP[0];
   char time_str[20];
-  sprintf(time_str, "%4.3e", timeP[2]);
+  sprintf(time_str, "%5.4e", timeP[2]);
   std::string sOut = " " + eq.sym + " " + std::to_string(cTS) + "-" + std::to_string(eq.itr) + c1 + " " + time_str;
 
   int i;

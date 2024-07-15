@@ -117,13 +117,12 @@ void cpl1DType::postprocess_Text(string& path){
 
     ofstream flow,area,pressure,reynolds,wss,vecolity_flux; // for ASCII
 
-    if(CreateFile){
+    if(step == 1){
       flow.open(tmp2, ios::out);
       area.open(tmp3, ios::out);
       pressure.open(tmp4, ios::out);
       // reynolds.open(tmp5, ios::out);
       // wss.open(tmp6, ios::out);
-      CreateFile = false;
     }else{
       // Text Files
       flow.open(tmp2, ios::app);
@@ -583,6 +582,8 @@ void cpl1DType::postprocess_VTK(std::string& path,int& cTS, double& scF){
 // MAIN SOLUTION DRIVER
 // ====================
 void cpl1DType::prepro(void){
+
+  model = cvOneDGlobal::gModelList[cvOneDGlobal::currentModel];
   char errStr[256];
   // First check to make sure we've set a model pointer
   // Prior to solution attempt.
@@ -608,9 +609,7 @@ void cpl1DType::prepro(void){
   for (i=0; i<id; i++){
     CalcInitProps(i);
   }
-
 }
-
 
 void cpl1DType::DefineMthModels(){
   mathModels.clear();
@@ -1201,7 +1200,6 @@ void cpl1DType::createModel(){
   // CREATE MATERIAL
   // cout << "Creating Materials ... " << endl;
   int totMaterials = cpl1DType::materialName.size();
-  // cout << "totMaterials = " << totMaterials << endl;
   //在每个处理cpl1D的进程上都创建所有的MATERIAL以便使用
   int matError = CV_OK;
   double doubleParams[3];
@@ -1312,10 +1310,7 @@ void cpl1DType::createModel(){
     delete [] curveValue;
     curveValue = NULL;
   }
-
-  model = cvOneDGlobal::gModelList[cvOneDGlobal::currentModel];
-  prepro();
-
+  delete oned;
 }
 
 // ======================

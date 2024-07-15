@@ -80,9 +80,6 @@ class cpl1DType
 
 
  private:
-
-
-    bool CreateFile = true;
     vector<cvOneDSubdomain*> subdomainList;
     vector<cvOneDFEAJoint*> jointList;
     vector<int> outletList;
