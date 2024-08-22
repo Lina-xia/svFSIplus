@@ -42,7 +42,6 @@ bool      cpl1DType::solverOptionDefined = false;
 
 double    cpl1DType::dt = 0;
 int       cpl1DType::saveIncr = 0;
-int       cpl1DType::maxStep = 0;
 int       cpl1DType::quadPoints = 2;
 double    cpl1DType::convergenceTolerance = 1.0e-8;
 int       cpl1DType::useIV = 1;
@@ -64,7 +63,7 @@ vector<double> cpl1DType::materialParam3;
 // ==================
 // WRITE TEXT RESULTS
 // ==================
-void cpl1DType::postprocess_Text(string& path){
+void cpl1DType::postprocess_Text(string& path,bool& stFileFlag){
   int j;
   int fileIter;
   int elCount = 0;
@@ -117,7 +116,7 @@ void cpl1DType::postprocess_Text(string& path){
 
     ofstream flow,area,pressure,reynolds,wss,vecolity_flux; // for ASCII
 
-    if(step == 1){
+    if(step == 1 && stFileFlag == false){
       flow.open(tmp2, ios::out);
       area.open(tmp3, ios::out);
       pressure.open(tmp4, ios::out);
@@ -141,7 +140,7 @@ void cpl1DType::postprocess_Text(string& path){
 
     // Output the flow file
     for(j=startOut+1;j<finishOut;j+=2){
-        flow << TotalSolution[step][j] << ",";
+        flow << (*currentSolution)[j] << ",";
     }
 
 
@@ -152,19 +151,20 @@ void cpl1DType::postprocess_Text(string& path){
     for(ii=0,j=startOut;ii<numEls+1 && j<finishOut;ii++,j+=2){
       double z = (ii/double(numEls))*segLength;
         //write area
-        Area = (double)TotalSolution[step][j];
+        Area = (double)(*currentSolution)[j];
         area << Area << ",";
+
 
         // Write Re
         r = sqrt(Area/M_PI);
-        flo = (double)TotalSolution[step][j+1];
+        flo = (double)(*currentSolution)[j+1];
         // // usual Re=rho/mu*D*velocity=rho/mu*Q*sqrt(4/Pi/Area)
         // Re = curMat->GetDensity()/curMat->GetDynamicViscosity()*flo/sqrt(Area)*sqrt(4.0/M_PI);
         // reynolds << Re << ",";
 
         // Write pressure - Initial (CGS) Units
-        Pre = (double) curMat->GetPressure(TotalSolution[step][j],z);
-        pressure << curMat->GetPressure(TotalSolution[step][j],z) << ",";
+        Pre = (double) curMat->GetPressure((*currentSolution)[j],z);
+        pressure << curMat->GetPressure((*currentSolution)[j],z) << ",";
 
         // // write Wall Shear Stresses for Poiseuille flow
         // wssVal = (4.0*curMat->GetDynamicViscosity()*flo)/(M_PI*r*r*r);
@@ -351,7 +351,6 @@ void cpl1DType::postprocess_VTK(std::string& path,int& cTS, double& scF){
   double iniArea = 0.0;
   double newArea = 0.0;
   double radDisp = 0.0;
-  int loopTime = step;
   cvStringVec fileList;
   string fileName;
 
@@ -477,7 +476,7 @@ void cpl1DType::postprocess_VTK(std::string& path,int& cTS, double& scF){
       fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Flowrate\" NumberOfComponents=\"1\" format=\"ascii\">\n");
       for(int j=startOut+1;j<finishOut;j+=2){
         for(int k=0;k<circSubdiv;k++){
-          fprintf(vtkFile,"%e ",(double)TotalSolution[loopTime][j]);
+          fprintf(vtkFile,"%e ",(double)(*currentSolution)[j]);
         }
         fprintf(vtkFile,"\n");
       }
@@ -487,7 +486,7 @@ void cpl1DType::postprocess_VTK(std::string& path,int& cTS, double& scF){
       fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Area\" NumberOfComponents=\"1\" format=\"ascii\">\n");
       for(int j=startOut;j<finishOut;j+=2){
         for(int k=0;k<circSubdiv;k++){
-          fprintf(vtkFile,"%e ",(double)TotalSolution[loopTime][j]);
+          fprintf(vtkFile,"%e ",(double)(*currentSolution)[j]);
         }
         fprintf(vtkFile,"\n");
       }
@@ -500,7 +499,7 @@ void cpl1DType::postprocess_VTK(std::string& path,int& cTS, double& scF){
         // Evaluate Initial Area at current location
         iniArea = currSeg->getInitInletS() + (((j-startOut)/2)/double(currSeg->getNumElements()))*(currSeg->getInitOutletS() - currSeg->getInitInletS());
         // Eval Current Area at current location
-        newArea = TotalSolution[loopTime][j];
+        newArea = (*currentSolution)[j];
         // Evaluate Radial displacement
         radDisp = sqrt(newArea/M_PI) - sqrt(iniArea/M_PI);
         for(int k=0;k<circSubdiv;k++){
@@ -524,7 +523,7 @@ void cpl1DType::postprocess_VTK(std::string& path,int& cTS, double& scF){
       for(int j=startOut;j<finishOut;j+=2){
         z = (section/(double)currSeg->getNumElements())*segLength;
         for(int k=0;k<circSubdiv;k++){
-          fprintf(vtkFile,"%e ",curMat->GetPressure(TotalSolution[loopTime][j],z)*baryeTommHg);
+          fprintf(vtkFile,"%e ",curMat->GetPressure((*currentSolution)[j],z)*baryeTommHg);
         }
         fprintf(vtkFile,"\n");
         section++;
@@ -535,8 +534,8 @@ void cpl1DType::postprocess_VTK(std::string& path,int& cTS, double& scF){
       fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"Reynolds\" NumberOfComponents=\"1\" format=\"ascii\">\n");
       for(int j=startOut;j<finishOut;j+=2){
         // Get Flow
-        flo = (double)TotalSolution[loopTime][j+1];
-        area = (double)TotalSolution[loopTime][j];
+        flo = (double)(*currentSolution)[j+1];
+        area = (double)(*currentSolution)[j];
         // Get Area
         Re = curMat->GetDensity()/curMat->GetDynamicViscosity()*flo/sqrt(area)*sqrt(4.0/M_PI);
         for(int k=0;k<circSubdiv;k++){
@@ -550,9 +549,9 @@ void cpl1DType::postprocess_VTK(std::string& path,int& cTS, double& scF){
       fprintf(vtkFile,"<DataArray type=\"Float32\" Name=\"WSS\" NumberOfComponents=\"1\" format=\"ascii\">\n");
       for(int j=startOut;j<finishOut;j+=2){
         // Get Flow
-        flo = (double)TotalSolution[loopTime][j+1];
+        flo = (double)(*currentSolution)[j+1];
         // Get Radius
-        radius = sqrt((double)TotalSolution[loopTime][j]/M_PI);
+        radius = sqrt((double)(*currentSolution)[j]/M_PI);
         // Get WSS
         wss = 4.0*curMat->GetDynamicViscosity()*flo/(M_PI*radius*radius*radius);
         for(int k=0;k<circSubdiv;k++){
@@ -893,17 +892,13 @@ void cpl1DType::CalcInitProps(long ID){
 // =================
 void cpl1DType::GenerateSolution(){
 
-  // Allocate the TotalSolution Array.
-  TotalSolution.SetSize(maxStep+1, currentSolution -> GetDimension());
-  // cout << "Total Solution is: " << maxStep  << " x " << currentSolution -> GetDimension() << endl;
-
   previousSolution->Rename( "step_0");
   *currentSolution = *previousSolution;
 
   double* tmp = previousSolution -> GetEntries();
-  for (int j=0;j<previousSolution -> GetDimension(); j++){
-    TotalSolution[0][j] = tmp[j];
-  }
+  // for (int j=0;j<previousSolution -> GetDimension(); j++){
+  //   TotalSolution[0][j] = tmp[j];
+  // }
 
   // Initialize the Equations...
   for(int i = 0; i < mathModels.size(); i++){
@@ -1035,8 +1030,7 @@ void cpl1DType::Nonlinear_iter(){
       }
 
     if(negArea==1) {
-    std::string emptyString;
-    postprocess_Text(emptyString);
+    cout << "Area is wrong." << endl;
     assert(0);
     }
 
@@ -1088,9 +1082,6 @@ void cpl1DType::Nonlinear_iter(){
   sprintf( String2, "%ld", (unsigned long)step);
   title = String1 + String2;
   currentSolution->Rename(title.data());
-  for(int j=0;j< currentSolution -> GetDimension(); j++){
-    TotalSolution[step][j] = tmp[j];
-  }
 
   *previousSolution = *currentSolution;
   outFile.close();

@@ -223,7 +223,6 @@ void read_bc(Simulation* simulation, EquationParameters* eq_params, eqType& lEq,
 
       cpl1DType::dt = simulation->com_mod.dt;
       cpl1DType::saveIncr = simulation->com_mod.saveIncr;
-      cpl1DType::maxStep = simulation->com_mod.nTS;
 
       cout << "----------------------------------------------------" << endl;
       cout << "[outletName]: step-iter  normf  norms  time_consumed" << endl;

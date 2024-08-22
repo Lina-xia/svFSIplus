@@ -24,7 +24,6 @@ class cpl1DType
     //静态变量表示所有的出口共享这些数据
     static double   dt;  //comMod.dt
     static int      saveIncr;  //comMod.saveIncr
-    static int      maxStep;   //comMod.nTS
 
     static bool     CreateCout;
     static string   OutputFile;
@@ -56,6 +55,7 @@ class cpl1DType
     double        flowEachTime;
     double        preFrom1DEachTime;
     bool          wasSet = false;
+    bool          Model = true;
     Vector<double> nv_age;
 
     // Solve the blood flow problem
@@ -70,13 +70,13 @@ class cpl1DType
     void Nonlinear_iter();
 
     // Result Output
-    void postprocess_Text(std::string& path);
+    void postprocess_Text(std::string& path, bool& stFileFlag);
     void postprocess_VTK(std::string& path, int& cTS, double& scF);
     
     // Find Segment index given the ID
     int getSegmentIndex(int segID);
     // Get the solution;
-    double GetSolution(int i, int j){return TotalSolution[i][j];}//IV 082103
+    // double GetSolution(int i, int j){return TotalSolution[i][j];}//IV 082103
 
 
  private:
@@ -88,7 +88,7 @@ class cpl1DType
     cvOneDFEAVector *increment;
     cvOneDFEAVector *rhs;
     cvOneDFEAVector *relLength; //for pressure calculation
-    cvOneDMatrix<double> TotalSolution;
+    // cvOneDMatrix<double> TotalSolution;
     cvOneDFEAMatrix *lhs;  // Generic matrix, can be skyline or sparse
     vector<cvOneDMthModelBase*> mathModels;
 

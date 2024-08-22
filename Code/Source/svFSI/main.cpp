@@ -112,12 +112,14 @@ void Couple1D(Simulation* simulation) {
 
           cpl1D.flowEachTime = all_fun::integ(com_mod, cm_mod, Fa, com_mod.Yn, eq.s, eq.s + com_mod.nsd-1);
           if (Fa.nNo != 0){
-            if (com_mod.cTS == 1){
+            // 避免在后面循环的时候再次创建model，引入cpl1D.Model;不能用step判断
+            if (cpl1D.Model){
                 cpl1D.readModel();
                 opts.check();
-                cpl1D.createModel();       //怎么判断在接口处三维一维是否相接
+                cpl1D.createModel();
                 cpl1D.prepro();
                 cpl1D.GenerateSolution();
+                cpl1D.step = 1;
 
                 // 每个点的法向量其实有细微出入, 取平均值带入
                 cpl1D.nv_age.resize(com_mod.nsd);
@@ -137,7 +139,6 @@ void Couple1D(Simulation* simulation) {
               dmsg << ">>> flowEachTime: " << cpl1D.flowEachTime;
             #endif
 
-            cpl1D.step = com_mod.cTS;
             cpl1D.Nonlinear_iter();
             for (int i = 0; i < com_mod.nsd; i++) bc.h(i) =  - cpl1D.preFrom1DEachTime * cpl1D.nv_age(i);
 
@@ -150,14 +151,16 @@ void Couple1D(Simulation* simulation) {
             std::string path = simulation->chnl_mod.appPath + "/";
             //TEXT文件是一步一输出
             if(cpl1DType::outputType == OutputTypeScope::OUTPUT_TEXT || cpl1DType::outputType == OutputTypeScope::OUTPUT_BOTH){
-                cpl1D.postprocess_Text(path);
+                cpl1D.postprocess_Text(path,com_mod.stFileFlag);
             }
             //VTK文件的输出和三维的VTK输出间隔一致
             if( (com_mod.cTS % com_mod.saveIncr == 0) && (cpl1DType::outputType == OutputTypeScope::OUTPUT_VTK ||    cpl1DType::outputType == OutputTypeScope::OUTPUT_BOTH) ){
                 cpl1D.postprocess_VTK(path, com_mod.cTS, mesh.scF);
             }
-
-          }
+            cpl1D.Model = false;
+            cpl1D.step++;
+            // cout << "1D step = " << cpl1D.step << endl;
+          } 
         }
         MPI_Barrier(MPI_COMM_WORLD);
       }
@@ -734,7 +737,8 @@ void iterate_solution(Simulation* simulation)
     }
 
     #ifdef debug_iterate_solution
-    dmsg << "cm.bcast(cm_mod, &stopTS)  ..." << std::endl; 
+    dmsg << "stopTS: " << stopTS << std::endl; 
+    dmsg << "cTS: " << cTS << std::endl; 
     #endif
 
     cm.bcast(cm_mod, &stopTS);
@@ -797,7 +801,7 @@ void iterate_solution(Simulation* simulation)
     if (l1) {
       break;
     }
-    
+
     // Solution is stored here before replacing it at next time step
     //
     Ao = An;
